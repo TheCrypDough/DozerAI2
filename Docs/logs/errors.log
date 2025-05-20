@@ -1,0 +1,8 @@
+# DozerAI & App Suite Critical Errors Log
+
+This log tracks critical errors encountered during execution that typically halt a process or cause significant failures (e.g., command failures, script crashes, unhandled exceptions) for DozerAI or the Dozer Employee App Suite.
+
+**Format:** `[YYYY-MM-DD HH:MM:SS] - Error Encountered/Resolved (DozerAI/App): [Error Type/Message Summary] - Task: [Guide Day X Task Name] - Status: [Investigating/Resolved] - Fix: [Brief Fix Summary, if Resolved]`
+
+---
+*(Log entries start here)*
