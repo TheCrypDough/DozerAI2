@@ -1,13 +1,16 @@
 # DozerAI & App Suite Progress
 
-*Last Updated: [YYYY-MM-DD HH:MM:SS - To be updated by DozerAI_Builder]*
+*Last Updated: 2025-05-26 00:15:00*
 
 ## Current Status
 
-Project Initialized. Foundational documentation (`CreationGuide`, `Rules`, log templates, `tasks.md` template, memory bank templates, `project_structure.md`) adapted and approved.
-Ready to begin Day 1 of Phase 0: Supabase Project Setup & "The Kennel" Initial Schema.
+Day 1 of Phase 0 (Kennel Foundation: Supabase Connection, Automated Schema Execution Script, Env Config & Gitignore) COMPLETED.
+Supabase project schema initialized successfully via automated Python script (`00_initialize_supabase_schema.py`).
+Python virtual environment (`venv`) created and `requirements.txt` populated and installed.
+`.gitignore` and `config/.env` structure established.
+Ready to begin Day 2: Kennel Ingestion MVP (Blueprint & Chat History).
 
-## What Works (Conceptual & Planned)
+## What Works (Conceptual & Planned -> Actual for Day 1)
 
 - **Comprehensive Vision:** Clear understanding of DozerAI agent architecture (Dozer Prime, Sub-Agents, Pack Members) and integrated Dozer Employee App Suite (Messenger, Tasks, HR, Voice).
 - **Finalized Core Tech Stack:** Supabase (Postgres+`pgvector`), LangGraph, Pydantic-AI, Mem0, Graphiti/Neo4j, self-hosted n8n, Langfuse, crewAI, ElevenLabs, Google LLM (Primary).
@@ -16,11 +19,15 @@ Ready to begin Day 1 of Phase 0: Supabase Project Setup & "The Kennel" Initial S
 - **Project Structure & Workflow:** Detailed `project_structure.md` and operational rules (`DozerAI_Rules_V1.md`) established.
 - **Git Repository:** `TheCrypDough/DozerAI2` is active.
 - **Development Environment Paths:** Confirmed (`C:\Dozers\`).
+- **Automated Supabase Schema Initialization:** Successfully created and executed `00_initialize_supabase_schema.py` using `psycopg` for direct DDL execution. All 8 schema blocks (core tables, users/roles, documents/chunks, messenger, tasks, time clock, meetings, suggestions) applied, including RLS policies. Solved various connection, dependency, and SQL syntax issues.
+- **Initial Python Environment:** `venv` created, `requirements.txt` includes `psycopg[binary]`, `python-dotenv`.
+- **Configuration Management:** `.env` file in `DozerAI_Code/config/` for sensitive credentials.
+- **Version Control Basics:** `.gitignore` in place at `C:\Dozers\`.
 
-## What's Left / Not Working (All Implementation)
+## What's Left / Not Working (All Implementation Beyond Day 1)
 
-- **Day 1+ Implementation:** All development tasks for DozerAI and the Dozer Employee App Suite.
-- **"The Kennel" Population:** Ingestion of "Dozer's Blueprint V8.0," our chat history, and other business documents.
+- **Day 2+ Implementation:** All development tasks for DozerAI and the Dozer Employee App Suite, starting with Kennel Ingestion.
+- **"The Kennel" Population:** Ingestion of "Dozer's Blueprint V8.0," our chat history (Day 2 task), and other business documents.
 - **Dozer Prime & Sub-Agent Development:** All agent logic, prompts, LangGraph flows, crewAI setups.
 - **Mem0 & Graphiti Integration:** Actual implementation of intelligent memory and knowledge graph.
 - **Dozer Employee App Suite Frontend:** Complete UI/UX development for all features.

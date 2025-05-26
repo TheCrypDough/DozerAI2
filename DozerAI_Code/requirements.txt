@@ -1,0 +1,45 @@
+# Core Python and Database
+python-dotenv
+psycopg[binary] # For PostgreSQL connection (includes psycopg2-binary or psycopg3 based on availability)
+
+# Supabase client (useful for other interactions, though not directly by the schema script)
+supabase
+
+# Langfuse Observability
+langfuse
+
+# Google Generative AI
+google-generativeai
+
+# Pydantic (for data validation and settings management, useful soon)
+pydantic
+pydantic-settings
+
+# FastAPI and Uvicorn (for backend API, planned for later days)
+# fastapi
+# uvicorn[standard]
+
+# Langchain Core Components (will be expanded significantly)
+# langchain-core
+# langchain-community
+# langchain-google-genai
+# langchain-anthropic # If used
+# langchain-openai # If used
+
+# LangGraph
+# langgraph
+
+# crewAI
+# crewai
+# crewai_tools
+
+# Mem0 - Agent Memory
+# mem0ai
+
+# Graph Database (Placeholder, Neo4j driver if used)
+# neo4j
+
+# Utility
+# requests
+# beautifulsoup4 # For potential web scraping tools
+# PyJWT # For handling JWTs if needed outside Supabase client 

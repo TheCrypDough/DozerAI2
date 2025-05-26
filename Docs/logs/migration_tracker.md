@@ -6,3 +6,8 @@ This log automatically records all file system structure changes (creations, ren
 
 ---
 *(Log entries start here)*
+[2025-05-26 00:15:00] - CREATE - Path: C:\Dozers\DozerAI_Code\config\.env - Details: Initial creation and population for Supabase DB credentials, API keys (Google, Langfuse), etc., as per Day 1 instructions.
+[2025-05-26 00:15:00] - CREATE - Path: C:\Dozers\.gitignore - Details: Created with comprehensive list of exclusions for Python, Node, OS-specific files, IDE configs, and sensitive data.
+[2025-05-26 00:15:00] - CREATE - Path: C:\Dozers\DozerAI_Code\requirements.txt - Details: Initial version with `psycopg[binary]` and `python-dotenv` for Day 1 schema script.
+[2025-05-26 00:15:00] - CREATE - Path: C:\Dozers\DozerAI_Code\scripts\00_initialize_supabase_schema.py - Details: Python script to automatically initialize Supabase database schema using `psycopg`.
+[2025-05-26 00:15:00] - CREATE - Path: C:\Dozers\DozerAI_Code\venv\ - Details: Python virtual environment created for project dependencies.

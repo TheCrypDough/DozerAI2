@@ -7,6 +7,10 @@ This log tracks the mandatory pre-action rules review performed by DozerAI_Build
 ---
 *(Log entries start here)*
 
-Action: Starting Task for DozerAI/App: Day 1: Supabase Project Setup & "The Kennel" Initial Schema (Git Initialization), Rules reviewed: Yes, Guides (Creation/Dev) consulted: Yes, Env verified: NA, Sequence verified: Yes, Timestamp: 2024-08-01 10:00:00
+Action: Starting Task for DozerAI/App: Day 1 - Kennel Foundation: Supabase Setup & "The Kennel" Initial Schema, Environment Configuration, Rules reviewed: Yes, Guides (Creation/Dev) consulted: Yes, Env verified: Yes, Sequence verified: Yes, Timestamp: 2024-08-01 10:00:00
 
 Action: Starting Task for DozerAI/App: Day 1: Pushing updated documentation, Rules reviewed: Yes, Guides (Creation/Dev) consulted: Yes, Env verified: Yes, Sequence verified: Yes, Timestamp: 2024-08-01 10:05:00
+
+Action: Starting Task for DozerAI/App: Day 1 - Kennel Foundation (Revised - Python Script for Schema), Rules reviewed: Yes, Guides (Creation/Dev) consulted: Yes (New Day 1), Env verified: Yes (Anthony to ensure .env for DB connection), Sequence verified: Yes, Timestamp: 2025-05-26 00:15:00
+
+Action: Completed Auto-Update Triggers & Workflow for Day 1. Ready for Day 2. Rules reviewed: Yes, Guides (Creation/Dev) consulted: Yes, Env verified: Yes, Sequence verified: Yes, Timestamp: 2025-05-26 00:15:00 
