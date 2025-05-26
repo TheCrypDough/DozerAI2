@@ -34,19 +34,27 @@ PROJECT_ROOT = os.path.dirname(SCRIPT_DIR_FOR_LOG)
 CONFIG_DIR = os.path.join(PROJECT_ROOT, 'config')
 DOTENV_PATH = os.path.join(CONFIG_DIR, '.env')
 
-if not os.path.exists(DOTENV_PATH):
-    logger.critical(f".env file not found at the expected location: {DOTENV_PATH}. Exiting.")
-    sys.exit(1)
+# Load environment variables from .env file
+dotenv_path = os.path.join(os.path.dirname(__file__), '..', 'config', '.env')
+if os.path.exists(dotenv_path):
+    logger.info(f"Attempting to load .env file from: {dotenv_path}")
+    load_dotenv(dotenv_path)
+    logger.info(".env file loaded.")
+else:
+    logger.warning(f".env file not found at {dotenv_path}. Script may rely on environment variables set externally.")
 
-logger.info(f"Attempting to load .env file from: {DOTENV_PATH}")
-load_dotenv(dotenv_path=DOTENV_PATH, override=True)
+# DEBUG: Print raw values directly after attempting to load .env
+print(f"DEBUG: Raw SUPABASE_POOLER_ENABLED from env: '{os.getenv('SUPABASE_POOLER_ENABLED')}'")
+print(f"DEBUG: Raw SUPABASE_POOL_HOST from env: '{os.getenv('SUPABASE_POOL_HOST')}'")
+print(f"DEBUG: Raw SUPABASE_POOL_PORT from env: '{os.getenv('SUPABASE_POOL_PORT')}'")
+print(f"DEBUG: Raw SUPABASE_POOLER_DB_USER from env: '{os.getenv('SUPABASE_POOLER_DB_USER')}'")
 
 # --- Supabase Connection Details ---
 POOLER_ENABLED = os.getenv("SUPABASE_POOLER_ENABLED", "false").lower() == "true"
-POOLER_USER = os.getenv("SUPABASE_POOLER_USER")
-POOLER_PASSWORD = os.getenv("SUPABASE_POOLER_PASSWORD")
-POOLER_HOST = os.getenv("SUPABASE_POOLER_HOST")
-POOLER_PORT = os.getenv("SUPABASE_POOLER_PORT", "6543")
+POOLER_USER = os.getenv("SUPABASE_POOLER_DB_USER")
+POOLER_PASSWORD = os.getenv("SUPABASE_POOLER_DB_PASSWORD")
+POOLER_HOST = os.getenv("SUPABASE_POOL_HOST")
+POOLER_PORT = os.getenv("SUPABASE_POOL_PORT", "6543")
 POOLER_DB_NAME = os.getenv("SUPABASE_POOLER_DB_NAME", "postgres")
 
 DB_USER = os.getenv("SUPABASE_DB_USER")
@@ -90,8 +98,7 @@ BEGIN
         AND tablename = table_name_text
         AND policyname = policy_name_text
     ) THEN
-        EXECUTE 'ALTER TABLE public.' || quote_ident(table_name_text) ||
-                ' DROP POLICY IF EXISTS ' || quote_ident(policy_name_text);
+        EXECUTE 'DROP POLICY ' || quote_ident(policy_name_text) || ' ON public.' || quote_ident(table_name_text);
         RAISE NOTICE 'Dropped RLS policy % on table %', policy_name_text, table_name_text;
     ELSE
         RAISE NOTICE 'RLS policy % on table % does not exist, skipping drop.', policy_name_text, table_name_text;
@@ -192,6 +199,8 @@ CREATE POLICY "Allow admin full access to app_settings"
 -- RLS for user_profiles
 SELECT drop_rls_policy_if_exists('user_profiles', 'Allow users to see their own profile');
 SELECT drop_rls_policy_if_exists('user_profiles', 'Allow admins to see all profiles');
+SELECT drop_rls_policy_if_exists('user_profiles', 'Allow users to update their own profile');
+SELECT drop_rls_policy_if_exists('user_profiles', 'Allow admins to update any profile');
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow users to see their own profile"
     ON user_profiles FOR SELECT
@@ -210,6 +219,7 @@ CREATE POLICY "Allow admins to update any profile"
 
 -- RLS for user_roles
 SELECT drop_rls_policy_if_exists('user_roles', 'Allow authenticated users to read roles');
+SELECT drop_rls_policy_if_exists('user_roles', 'Allow admin to manage roles');
 ALTER TABLE user_roles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow authenticated users to read roles"
     ON user_roles FOR SELECT
