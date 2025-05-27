@@ -1,16 +1,60 @@
 # DozerAI & App Suite Progress
 
-*Last Updated: 2025-05-27 01:00:00*
+*Last Updated: 2025-05-27 17:30:00*
 
-## Current Status
+## Current Project Status (End of Day 3)
+Day 3 (Embeddings & Basic RAG Structure) is COMPLETED.
+- All document chunks ingested on Day 2 now have corresponding embeddings (`text-embedding-004`) stored in the `document_embeddings` table in Supabase.
+- An HNSW index is active on the `document_embeddings` table for efficient similarity search.
+- The foundational components for a basic RAG (Retrieval Augmented Generation) pipeline for Dozer Prime are in place:
+    - `KennelClient` (`engine/core/kennel_client.py`) can perform semantic search and retrieve document chunks.
+    - Pydantic schemas (`engine/core/schemas.py`) define the data structures for RAG inputs and outputs.
+    - A LangGraph flow (`engine/core/langgraph_flows/prime_rag_flow.py`) defines the RAG process (embed query -> retrieve chunks -> format context -> generate response).
+    - `DozerPrimeAgent` (`engine/agents/prime/dozer_prime.py`) can invoke this RAG flow.
+- Langfuse tracing is integrated into the embedding script and the RAG components.
+- `requirements.txt` has been updated with necessary libraries (`langgraph`, correct `langfuse` version).
+- Supabase schema script (`00_initialize_supabase_schema.py`) is updated to correctly manage the `document_embeddings` table and drop the old `embedding` column from `document_chunks`.
 
-Day 1 of Phase 0 (Kennel Foundation: Supabase Connection, Automated Schema Execution Script, Env Config & Gitignore) COMPLETED.
-Supabase project schema initialized successfully via automated Python script (`00_initialize_supabase_schema.py`).
-Python virtual environment (`venv`) created and `requirements.txt` populated and installed.
-`.gitignore` and `config/.env` structure established.
-Ready to begin Day 2: Kennel Ingestion MVP (Blueprint & Chat History).
+## What Works (Verified)
+- **Day 1**: Supabase schema initialization script (`00_initialize_supabase_schema.py`) creates the foundational tables (excluding `document_embeddings` initially, but now updated).
+- **Day 2**: Document ingestion script (`01_ingest_and_contextualize_docs.py`) successfully parses, chunks, (summarizes Blueprint), and stores document data into `documents` and `document_chunks` tables.
+- **Day 3**: 
+    - Embedding generation script (`02_generate_and_store_embeddings.py`) successfully generates embeddings for all chunks in `document_chunks` using Google's `text-embedding-004` model and stores them in the `document_embeddings` table.
+    - HNSW index on `document_embeddings.embedding` is created and active.
+    - Core RAG Python modules (`kennel_client.py`, `schemas.py`, `prime_rag_flow.py`, `dozer_prime.py`) are created and are importable (basic structural integrity).
+    - Langfuse tracing is integrated into these scripts and modules (calls are made, though full end-to-end Langfuse UI verification for traces is pending Day 4 RAG execution test).
 
-Day 2 Kennel Ingestion MVP complete. Foundational documents (Blueprint, Dev Chat, Biz Plan Chat) parsed, chunked, summarized (Blueprint only), and stored in Supabase.
+## What's Left (High-Level for Next Phases)
+- **Day 4 Focus**: 
+    - Thoroughly test the end-to-end Dozer Prime RAG pipeline developed on Day 3 by running the `dozer_prime.py` script with sample queries.
+    - Debug any runtime issues in the RAG flow or component interactions.
+    - Introduce AG-UI (Agent-Generated User Interface) protocol concepts and plan for its integration.
+- **Beyond Day 4 (MVP Scope & Future)**:
+    - Refine RAG pipeline (e.g., advanced context formatting, re-ranking, handling of no-retrieval scenarios).
+    - Develop Dozer Prime's persona and LLM prompting for generation node.
+    - Implement actual FastAPI backend with an endpoint to expose Dozer Prime's RAG capabilities.
+    - Begin development of the Dozer Employee App Suite frontend (React+Vite) and integrate AG-UI client logic.
+    - Integrate Mem0 for agent memory and Graphiti/Neo4j for knowledge graph capabilities.
+    - Develop other specialized sub-agents and crewAI collaborations.
+    - Implement n8n workflows for external tool automation.
+    - Comprehensive testing, security hardening, and deployment planning.
+    - Ingestion of more diverse knowledge sources (tax codes, building codes, etc.).
+
+## Known Issues & Blockers
+- **Resolved (Day 3)**:
+    - `langfuse` pip install version incompatibility (used `~=2.25.0`).
+    - `psycopg2` import error when running schema script (installed `psycopg2-binary`).
+    - Supabase schema error regarding `document_embeddings` table and old `embedding` column (updated `00_initialize_supabase_schema.py`).
+    - Langfuse SDK import errors for `CreateTrace`, `CreateGeneration`, `CreateSpan` (changed to direct kwarg passing).
+    - `.env` variable name mismatch (`SUPABASE_API_URL` vs `SUPABASE_URL` - updated scripts).
+    - Google Embedding API model name (`models/` prefix) and dimension mismatch (switched to `text-embedding-004`).
+    - Google API Quota Exhaustion (mitigated by model switch).
+    - Conceptual consistency for embedding models across RAG components (aligned to `text-embedding-004`).
+- **Anticipated/Ongoing**:
+    - Ensuring robust error handling and logging in all RAG components during Day 4 testing.
+    - Potential LLM response quality issues requiring prompt engineering or RAG strategy refinement.
+    - Complexity of AG-UI integration (Day 4+).
+    - Standard 1-Week MVP pressure for delivering core functionality.
 
 ## What Works (Conceptual & Setup)
 

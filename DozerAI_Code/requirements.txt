@@ -13,7 +13,7 @@ uvicorn[standard]~=0.29.0
 # For Pydantic (data validation, used by FastAPI and agents)
 pydantic~=2.7.1
 
-# For Langfuse observability (future days)
+# For Langfuse observability
 langfuse~=2.25.0
 
 # For direct PostgreSQL interaction (used by Day 1 script)
@@ -31,4 +31,8 @@ langchain-text-splitters~=0.2.1 # Or latest compatible
 langchain-core~=0.2.5 # Often a peer dependency for langchain_text_splitters
 
 # For token counting (often an OpenAI SDK dependency, but good standalone for estimations)
-tiktoken~=0.7.0 
+tiktoken~=0.7.0
+
+# --- Added for Day 3 ---
+# For LangGraph (Core, and pulls in langchain_core, often LangSmith for tracing if not disabled)
+langgraph~=0.0.67 # Or check for latest stable 

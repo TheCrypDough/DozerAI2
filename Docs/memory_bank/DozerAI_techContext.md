@@ -1,6 +1,60 @@
 # DozerAI & App Suite Technical Context (V1.0 - Initial Build)
 
-*Last Updated: 2025-05-27 01:00:00*
+*Last Updated: 2025-05-27 17:30:00*
+
+## Languages
+-   **Backend**: Python (`~3.11` or as per `venv`)
+-   **Frontend**: JavaScript/TypeScript (React+Vite planned - Future)
+
+## Backend Core Technologies & Libraries
+-   **Framework**: FastAPI (Future for API endpoints)
+-   **Orchestration/Agent Logic**: LangGraph (`~0.0.69`), crewAI (Future), Pydantic AI (for Pydantic models `~2.7.1`)
+-   **Database Client**: Supabase Python Client (`~2.4.2`)
+-   **Vector DB Interaction**: `psycopg[binary]` (`~3.1.18`) / `psycopg2-binary` (`~2.9.9`) for direct SQL if needed, Supabase client for `pgvector` functions.
+-   **Data Ingestion/Processing**: `python-dotenv~=1.0.1`, `google-generativeai~=0.5.4`, `markdown-it-py~=3.0.0`, `langchain-text-splitters~=0.2.1`, `langchain-core~=0.2.5`, `tiktoken~=0.7.0`.
+-   **Observability**: Langfuse SDK (`~2.25.0`)
+-   **Agent Memory**: Mem0.ai (Future)
+-   **Knowledge Graph Client**: Neo4j Driver (Future)
+-   **Key Scripts Developed**: 
+    -   `00_initialize_supabase_schema.py` (DB setup, HNSW index for `document_embeddings`)
+    -   `01_ingest_and_contextualize_docs.py` (Doc parsing, chunking, summarizing)
+    -   `02_generate_and_store_embeddings.py` (Embedding generation with `text-embedding-004`)
+-   **Core Engine Components**: 
+    -   `engine/core/kennel_client.py` (Semantic search, document retrieval)
+    -   `engine/core/schemas.py` (Pydantic models for RAG)
+    -   `engine/core/langgraph_flows/prime_rag_flow.py` (Basic RAG graph)
+    -   `engine/agents/prime/dozer_prime.py` (Agent orchestrator for RAG)
+
+## Frontend Core Technologies & Libraries (Planned - Future)
+-   **Framework**: React+Vite (Initial plan)
+-   **AG-UI Client**: Copilot Kit (React - evaluation pending) or custom EventSource implementation.
+-   **State Management**: TBD (e.g., Zustand, Redux Toolkit)
+-   **Supabase Client**: Supabase JS Client for realtime features.
+
+## Databases ("The Kennel")
+-   **Primary Relational & Vector Store**: Supabase (Cloud-hosted PostgreSQL with `pgvector` extension).
+    -   Key Tables: `documents`, `document_chunks`, `document_embeddings` (with HNSW index on `embedding vector_l2_ops`).
+    -   `embedding` column (old) removed from `document_chunks`.
+-   **Knowledge Graph**: Neo4j (Likely backend for Graphiti - Future).
+
+## LLM Integrations
+-   **Google Generative AI**: 
+    -   `gemini-2.5-pro-preview-05-06` (Primary for Dozer Prime generation tasks in RAG).
+    -   `gemini-2.5-flash-preview-05-20` (For utility tasks like summarization - Day 2).
+    -   `text-embedding-004` (For document and query embeddings - 768 dimensions).
+-   **OpenAI/Anthropic**: As needed (Future).
+
+## External Services & Tools
+-   **Workflow Automation**: n8n (Self-Hosted via Docker - Future setup).
+-   **Voice I/O**: ElevenLabs (TTS), Browser SpeechRecognition API (STT) - (Future for App Suite).
+-   **Web Crawling**: Crawl4ai MCP (Future).
+
+## DevOps & Development Environment
+-   **Version Control**: Git, GitHub (`TheCrypDough/DozerAI2`)
+-   **Local Environment**: `C:\Dozers\`, Python Virtual Environment (`venv` or `.venv`)
+-   **Containerization**: Docker (For n8n, local DBs, backend services - Future `docker-compose.dev.yml`)
+-   **CI/CD**: GitHub Actions (Future).
+-   **Documentation Tools**: Context7, AG-UI Docs.
 
 ## Core Technologies
 

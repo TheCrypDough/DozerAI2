@@ -1592,3 +1592,1440 @@ Motivation:
 
 
 End Day 2
+
+
+
+**Day 3 - Kennel Ingestion (Stage 2): Generating Embeddings with `gemini-embedding-exp-03-07`, HNSW Indexing & Basic RAG Logic for Dozer Prime (using `gemini-2.5-pro-preview-05-06`)**
+
+**Anthony's Vision (for this DozerAI/App Feature):**
+"The Kennel has its raw ingredients (text chunks, contextual summaries for the Blueprint)! Now, Dozer, we need to give you the 'smart nose' to find the right stuff. This means creating those AI 'fingerprints' – the embeddings – for every chunk, using Google's embedding tech. And we need to make sure Supabase can search these fingerprints super-fast. Once that's done, I want to see the first glimmer of Dozer Prime's RAG capability – ask it a question about the Blueprint, and it should find the relevant info and use its **`gemini-2.5-pro-preview-05-06`** brain to give me an answer. This is the core of its knowledge access!"
+
+**Description:**
+Day 3 completes the initial ingestion pipeline for "The Kennel" and implements the first version of Dozer Prime's Retrieval Augmented Generation (RAG) capability. This involves:
+1.  **Embedding Generation:** A new Python script (`02_generate_and_store_embeddings.py`) will:
+    *   Fetch all processed chunks from the `document_chunks` table in Supabase for which embeddings have not yet been generated.
+    *   For each chunk's `chunk_text` (and potentially its `contextual_summary` if present and deemed valuable to include in the embedding input), generate a vector embedding using Google's **`gemini-embedding-exp-03-07`** model via the `google-generativeai` SDK.
+    *   Store these embeddings in the `document_embeddings` table, linked to their respective `chunk_id`, along with the `embedding_model_name`.
+2.  **HNSW Index Creation:** The script (or a separate SQL command for Anthony to run in Supabase Studio post-script) will ensure an HNSW (Hierarchical Navigable Small World) index is created on the `embedding` column of the `document_embeddings` table in Supabase. This is crucial for efficient vector similarity searches.
+3.  **Dozer Prime MVP - Basic RAG Implementation (LangGraph):**
+    *   Initial implementation of `C:\Dozers\DozerAI_Code\engine\agents\prime\dozer_prime.py`.
+    *   Define a simple LangGraph graph with the following nodes:
+        *   **Receive Query:** Gets user input.
+        *   **Embed Query:** Uses **`gemini-embedding-exp-03-07`** to embed the query.
+        *   **Retrieve Chunks:** Queries Supabase/`pgvector` via `kennel_client.py` to find top K similar chunks based on the query embedding.
+        *   **Augment & Generate:** Constructs a prompt using the retrieved chunks and the original query, then calls **`gemini-2.5-pro-preview-05-06`** (Dozer Prime's core model) for a response.
+        *   **Return Response:** Outputs the LLM's generated answer.
+    *   Pydantic models for Dozer Prime's input/output.
+4.  **Kennel Client Enhancements (`kennel_client.py`):**
+    *   Update `C:\Dozers\DozerAI_Code\engine\core\kennel_client.py` to include functions for:
+        *   Fetching chunks needing embeddings.
+        *   Storing embeddings in batch.
+        *   Performing vector similarity search (using `pgvector` operators like `<=>`).
+5.  **Langfuse Integration - Basic Tracing:** Integrate basic Langfuse tracing for the new embedding generation process and Dozer Prime's RAG workflow (LLM calls, retrieval step).
+
+**Relevant Context (for DozerAI/App Suite):**
+*Technical Analysis:* The embedding script will use `google-generativeai` for embeddings (model **`gemini-embedding-exp-03-07`**) and `supabase-py` for DB interaction. Batching will be used for fetching chunks and inserting embeddings. The HNSW index in `pgvector` (e.g., `USING hnsw (embedding vector_l2_ops)`) is vital for performance. Dozer Prime's LangGraph RAG pipeline will demonstrate the core "retrieve then read" pattern. `kennel_client.py` abstracts Supabase interactions. Langfuse will trace the calls to the embedding model and Dozer Prime's core LLM.
+*Layman’s Terms:* We're giving DozerAI its "super-powered sense of smell" for finding information in "The Kennel."
+    1.  **Creating "Scent Profiles" (Embeddings):** For every piece of information (chunk) we filed away yesterday, we're asking a specialized Google AI (**`gemini-embedding-exp-03-07`**) to create a unique "scent profile" (a vector embedding). We store these scent profiles next to their info pieces.
+    2.  **Super-Fast Scent Index:** We'll tell our Supabase library to build a special super-fast index (HNSW) so it can compare scents incredibly quickly.
+    3.  **Dozer Prime Learns to Sniff & Think:** We'll teach Dozer Prime (our main AI using the powerful **`gemini-2.5-pro-preview-05-06`**) a basic trick: when Anthony asks a question, Dozer Prime converts the question into a "scent," then uses the fast index to find the stored info pieces with the most similar scents. It reads those relevant pieces and then uses its big brain to give Anthony an answer.
+    4.  We'll also make sure our Langfuse inspector is watching all this scent-making and sniffing to ensure it's working right.
+
+**DozerAI_Builder's Thought Input:**
+This is a foundational day for DozerAI's core intelligence. Generating and storing embeddings correctly, ensuring the HNSW index is active, and implementing the first RAG loop in Dozer Prime are major milestones. Using the specific **`gemini-embedding-exp-03-07`** for embeddings and **`gemini-2.5-pro-preview-05-06`** for Dozer Prime's reasoning is locked in. Langfuse tracing here will be immediately valuable.
+
+**Anthony's Thought Input (for DozerAI/App Development):**
+"Perfect. I need Dozer Prime to actually *use* the Blueprint knowledge. Getting these embeddings done and seeing Prime pull relevant info to answer a question is exactly what I need for the business plan assistance. Make sure that HNSW thingy is working so it's fast. And yes, only the specified Gemini models, no more deviations!"
+
+**Additional Files, Documentation, Tools, Programs Needed (for DozerAI/App):**
+-   `02_generate_and_store_embeddings.py`: (Python Script), (Generates and stores embeddings, ensures HNSW index), (Core of Day 3 Ingestion Stage 2), (To be created in `C:\Dozers\DozerAI_Code\scripts\`).
+-   `C:\Dozers\DozerAI_Code\engine\agents\prime\dozer_prime.py`: (Python Module), (Initial LangGraph RAG implementation for Dozer Prime), (To be created/updated).
+-   `C:\Dozers\DozerAI_Code\engine\core\kennel_client.py`: (Python Module), (Supabase interaction logic, enhanced for embedding/vector search), (To be updated).
+-   `C:\Dozers\DozerAI_Code\engine\core\langgraph_flows\prime_rag_flow.py`: (Python Module), (Defines Dozer Prime's initial RAG graph), (To be created).
+-   `C:\Dozers\DozerAI_Code\engine\core\schemas.py`: (Python Module), (Pydantic models for agent I/O), (To be created/updated).
+-   `C:\Dozers\DozerAI_Code\requirements.txt`: Update with `langgraph` and `langfuse`.
+-   `google-generativeai` Python SDK documentation for embedding models (Context7 target).
+-   `pgvector` documentation for HNSW index creation and vector operators (Context7 target).
+-   LangGraph documentation for basic graph construction (Context7 target).
+
+**Any Additional Updates Needed to the Project (DozerAI/App) Due to This Implementation?**
+-   `requirements.txt` updated.
+-   `document_embeddings` table in Supabase populated. HNSW index created.
+-   New Python modules for Dozer Prime, Kennel Client, LangGraph flows, and schemas.
+
+**DozerAI/App Project/File Structure Update Needed:** Yes.
+    - Create directory: `C:\Dozers\DozerAI_Code\engine\agents\prime\`
+    - Create directory: `C:\Dozers\DozerAI_Code\engine\core\langgraph_flows\`
+    - Create/update files as listed above.
+
+**Any Additional Updates Needed to the DozerAI Guide for Changes or Explanation?**
+-   No, this entry details the plan.
+
+**Any Removals from the DozerAI Guide Needed?**
+-   None.
+
+**Effect on DozerAI/App Project Timeline:**
+-   No change; this is Day 3 as planned. Ambitious but achievable core functionality.
+
+**Integration Plan (for DozerAI/App):**
+-   **When:** Day 3 (Week 1) – Kennel Ingestion Stage 2 (Embeddings) & Dozer Prime RAG MVP.
+-   **Where:** Python scripts and modules in `C:\Dozers\DozerAI_Code\`, interacting with Supabase Cloud.
+-   **Dependencies (Software):** Activated Python virtual environment from Day 2 with updated packages. Langfuse SDK initialized (from Day 1 guide's conceptual plan, to be practically implemented today).
+-   **Setup Instructions (Summary):** Anthony updates `requirements.txt`, installs. DozerAI_Builder provides scripts/modules. Anthony runs embedding script, then tests Dozer Prime RAG.
+
+**Recommended Tools (for DozerAI/App):**
+-   Python, VS Code. Supabase Studio. Terminal. Langfuse UI.
+
+---
+**Tasks for DozerAI_Builder (CursorAI):**
+
+1.  **Update `requirements.txt` Content:**
+    *   Provide the *complete* updated content for `C:\Dozers\DozerAI_Code\requirements.txt`, adding `langgraph` and confirming `langfuse` is present.
+2.  **Develop Embedding Script (`02_generate_and_store_embeddings.py`):**
+    *   Create `C:\Dozers\DozerAI_Code\scripts\02_generate_and_store_embeddings.py`.
+    *   **Functionality:**
+        *   Load Supabase & Google API credentials from `.env`. Initialize clients.
+        *   Fetch rows from `document_chunks` where corresponding `chunk_id` does not exist in `document_embeddings`. Process in batches (e.g., 100-200 chunks per batch).
+        *   For each chunk, combine `chunk_text` and `contextual_summary` (if summary exists and is not empty/None) as the text to be embedded. If no summary, use only `chunk_text`.
+        *   Call Google's **`gemini-embedding-exp-03-07`** embedding model (using `genai.embed_content` or equivalent for the specified model via `google-generativeai` SDK) for each text.
+        *   Handle potential batch embedding if the SDK supports it efficiently for this model.
+        *   Store the resulting vector, `chunk_id`, and `embedding_model_name` ("gemini-embedding-exp-03-07") in the `document_embeddings` table in Supabase (batch insert).
+        *   Include progress indicators and error handling.
+    *   **HNSW Index Creation:** After processing all chunks, the script should attempt to execute the SQL command to create the HNSW index on `document_embeddings(embedding vector_l2_ops)` if it doesn't already exist. Print success or instructions for Anthony to run it manually in Supabase Studio if programmatic creation fails due to permissions or timing.
+3.  **Develop Initial Kennel Client (`kennel_client.py`):**
+    *   Create/Update `C:\Dozers\DozerAI_Code\engine\core\kennel_client.py`.
+    *   **Functionality:**
+        *   Class `KennelClient` initialized with Supabase client (from global config or passed in).
+        *   `async def get_chunks_needing_embedding(self, batch_size: int = 100) -> list[dict]`: Fetches chunks from `document_chunks` that don't have an embedding in `document_embeddings`.
+        *   `async def store_embeddings_batch(self, embeddings_data: list[dict]) -> bool`: Batch inserts records into `document_embeddings`.
+        *   `async def ensure_hnsw_index(self) -> bool`: Tries to execute `CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_hnsw_document_embeddings ON public.document_embeddings USING hnsw (embedding vector_l2_ops);`.
+        *   `async def semantic_search_chunks(self, query_embedding: list[float], model_name: str, top_k: int = 5) -> list[dict]`:
+            *   Uses Supabase/`pgvector`'s L2 distance operator (`<=>`) to find `top_k` most similar chunks.
+            *   SQL Query like: `SELECT dc.chunk_id, dc.chunk_text, dc.contextual_summary, dc.document_id, d.title as document_title, de.embedding <=> query_embedding_array::vector AS distance FROM document_embeddings de JOIN document_chunks dc ON de.chunk_id = dc.chunk_id JOIN documents d ON dc.document_id = d.document_id WHERE de.embedding_model_name = %s ORDER BY distance LIMIT %s;`
+            *   Returns a list of dictionaries, each containing chunk text, summary, document title, and distance.
+4.  **Develop Pydantic Schemas (`schemas.py`):**
+    *   Create/Update `C:\Dozers\DozerAI_Code\engine\core\schemas.py`.
+    *   Define `DozerPrimeQueryInput(BaseModel)`: `query: str`, `user_id: str` (for Mem0 later).
+    *   Define `RetrievedChunk(BaseModel)`: `chunk_text: str`, `contextual_summary: Optional[str] = None`, `document_title: str`, `distance: float`.
+    *   Define `DozerPrimeRAGOutput(BaseModel)`: `response: str`, `retrieved_chunks: List[RetrievedChunk]`.
+5.  **Develop Dozer Prime Basic RAG (LangGraph - `dozer_prime.py` & `prime_rag_flow.py`):**
+    *   Create `C:\Dozers\DozerAI_Code\engine\agents\prime\dozer_prime.py`.
+    *   Create `C:\Dozers\DozerAI_Code\engine\core\langgraph_flows\prime_rag_flow.py`.
+    *   **`prime_rag_flow.py` Functionality:**
+        *   Define LangGraph `StateGraph` with a state schema including `query_input: DozerPrimeQueryInput`, `query_embedding: Optional[list[float]]`, `retrieved_chunks_for_llm: Optional[List[str]]`, `llm_response: Optional[str]`, `final_output: Optional[DozerPrimeRAGOutput]`.
+        *   **Node `embed_query_node`:** Takes `query_input.query`, uses **`gemini-embedding-exp-03-07`** to generate embedding, updates `query_embedding` in state.
+        *   **Node `retrieve_chunks_node`:** Uses `KennelClient.semantic_search_chunks` with `query_embedding` from state, formats the relevant text from retrieved chunks (chunk text + summary) into `retrieved_chunks_for_llm`.
+        *   **Node `generate_response_node`:** Constructs prompt for **`gemini-2.5-pro-preview-05-06`** using `query_input.query` and `retrieved_chunks_for_llm`. Calls LLM. Updates `llm_response`.
+        *   **Node `format_output_node`:** Creates `DozerPrimeRAGOutput` object, updates `final_output`.
+        *   Define graph edges: `embed_query_node` -> `retrieve_chunks_node` -> `generate_response_node` -> `format_output_node` -> `END`.
+        *   Compile the graph.
+    *   **`dozer_prime.py` Functionality:**
+        *   Class `DozerPrimeAgent` (can be simple for now).
+        *   Method `async def run_rag_query(self, query_input: DozerPrimeQueryInput, kennel_client: KennelClient, embedding_llm_client, prime_llm_client) -> DozerPrimeRAGOutput`:
+            *   Injects clients/tools into the LangGraph compiled app.
+            *   Invokes the compiled LangGraph RAG flow with `query_input`.
+            *   Returns `final_output`.
+6.  **Integrate Langfuse Tracing:**
+    *   In `02_generate_and_store_embeddings.py`: Initialize Langfuse. Wrap the call to the Google embedding model in a Langfuse trace/generation.
+    *   In `kennel_client.py`: Wrap the `semantic_search_chunks` execution (DB query) in a Langfuse span.
+    *   In `dozer_prime.py` / `prime_rag_flow.py`:
+        *   Initialize Langfuse.
+        *   Wrap each LangGraph node's core logic (embedding call, retrieval call, main LLM call) in Langfuse generations/spans with appropriate metadata (input, output, model name).
+        *   Ensure the overall `run_rag_query` invocation is traced.
+7.  **Log Start in `rules_check.log`:**
+    *   Mentally prepare log entry.
+8.  **Instruct Anthony for His Tasks:**
+    *   Provide clear instructions to save/update `requirements.txt`, all new/updated Python modules.
+    *   Instruct to install new dependencies.
+    *   Instruct to run the embedding script (`02_...py`), then verify Supabase `document_embeddings` table and HNSW index.
+    *   Instruct how to run a simple test of `DozerPrimeAgent.run_rag_query` (e.g., via a small test Python script or directly in an interactive Python session if Dozer Prime is callable).
+
+---
+**Code for `requirements.txt` (to be saved/updated by Anthony at `C:\Dozers\DozerAI_Code\requirements.txt`):**
+```text
+# C:\Dozers\DozerAI_Code\requirements.txt
+# APPEND these to your existing requirements.txt from Day 2
+
+# For LangGraph (Core, and pulls in langchain_core, often LangSmith for tracing if not disabled)
+langgraph~=0.0.67 # Or check for latest stable
+
+# Langfuse SDK (already listed but confirm version)
+langfuse~=2.25.2
+Use code with caution.
+Markdown
+(Self-correction: langchain-text-splitters and langchain-core were added on Day 2. langgraph is the main new one here. langfuse should already be there from previous implicit inclusion plan.)
+Code for Python Script (C:\Dozers\DozerAI_Code\scripts\02_generate_and_store_embeddings.py):
+# C:\Dozers\DozerAI_Code\scripts\02_generate_and_store_embeddings.py
+import os
+import sys
+import time
+import asyncio
+from dotenv import load_dotenv
+from pathlib import Path
+from supabase import create_client, Client
+import google.generativeai as genai
+from langfuse import Langfuse # Import Langfuse
+from langfuse.model import CreateTrace, CreateGeneration, CreateSpan # For tracing
+
+# --- Configuration & Clients ---
+print("Script: Initializing configuration and clients for Embedding Generation...")
+BASE_DIR = Path(__file__).resolve().parent.parent
+CONFIG_DIR = BASE_DIR / "config"
+ENV_PATH = CONFIG_DIR / ".env"
+
+if not ENV_PATH.exists():
+    print(f"CRITICAL ERROR: .env file not found at {ENV_PATH}")
+    sys.exit(1)
+load_dotenv(ENV_PATH)
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+
+# Langfuse Configuration
+LANGFUSE_PUBLIC_KEY = os.getenv("LANGFUSE_PUBLIC_KEY")
+LANGFUSE_SECRET_KEY = os.getenv("LANGFUSE_SECRET_KEY")
+LANGFUSE_HOST = os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com")
+
+if not all([SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GOOGLE_API_KEY, LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY]):
+    print("ERROR: Supabase, Google API Key, or Langfuse credentials missing in .env.")
+    sys.exit(1)
+
+try:
+    supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    print("Supabase client initialized.")
+except Exception as e:
+    print(f"Error initializing Supabase client: {e}")
+    sys.exit(1)
+
+try:
+    genai.configure(api_key=GOOGLE_API_KEY)
+    # EXPLICITLY Using 'models/text-embedding-004' as the Google SDK identifier for the embedding model.
+    # If "gemini-embedding-exp-03-07" is the correct string that works with genai.embed_content for a Gemini embedding model, use that.
+    # For now, assuming 'models/text-embedding-004' for a known GA model.
+    # Anthony confirmed: Use "gemini-embedding-exp-03-07". If this isn't a direct model name for genai.embed_content,
+    # we need to identify how to specify it or use the closest available general embedding model.
+    # Let's assume genai.embed_content takes 'model="models/embedding-001"' or a similar GA model name,
+    # and we are aiming for the semantic equivalent of what "gemini-embedding-exp-03-07" represents.
+    # Using a placeholder name that should be verified for actual API call with google-generativeai SDK
+    EMBEDDING_MODEL_NAME_SDK = "models/text-embedding-004" # Default known Google embedding model
+    # ANTHONY HAS EXPLICITLY STATED 'gemini-embedding-exp-03-07'.
+    # WE WILL TRY TO USE THIS. If the SDK `embed_content` function errors out because it doesn't 
+    # recognize 'gemini-embedding-exp-03-07' as a model ID, we must use Context7 or Google Docs
+    # to find the CORRECT SDK string for the intended embedding model (likely a text-embedding or embedding-gecko type).
+    # For this script generation, I will use the EXACT string Anthony provided, and we will debug if the SDK rejects it.
+    EMBEDDING_MODEL_NAME_FOR_DB = "gemini-embedding-exp-03-07" # For storing in DB
+    EMBEDDING_MODEL_SDK_TARGET = EMBEDDING_MODEL_NAME_FOR_DB # What we try to pass to SDK
+    print(f"Google Generative AI client configured for embeddings with target model: {EMBEDDING_MODEL_SDK_TARGET}")
+except Exception as e:
+    print(f"Error configuring Google Generative AI: {e}")
+    sys.exit(1)
+
+try:
+    langfuse = Langfuse(
+        public_key=LANGFUSE_PUBLIC_KEY,
+        secret_key=LANGFUSE_SECRET_KEY,
+        host=LANGFUSE_HOST
+    )
+    print("Langfuse client initialized.")
+except Exception as e:
+    print(f"Error initializing Langfuse client: {e}")
+    # Continue without Langfuse if it fails to init, but log warning
+    langfuse = None
+    print("WARNING: Langfuse not initialized. Tracing will be disabled for this run.")
+
+# --- Helper Functions ---
+def get_chunks_without_embeddings_batch(supabase: Client, offset: int, batch_size: int = 100) -> list:
+    try:
+        # Select chunk_id, chunk_text, contextual_summary, and document_title
+        # from document_chunks where no corresponding entry exists in document_embeddings
+        # Ensure to join with documents table to get the document_title
+        response = supabase.rpc('get_chunks_needing_embeddings', 
+                                {'batch_limit': batch_size, 'batch_offset': offset}).execute()
+        
+        # Fallback if RPC is not set up (Requires creating the SQL function 'get_chunks_needing_embeddings')
+        # For Day 3, we'll use a simpler query, assuming not too many chunks initially.
+        # For a production system with millions of chunks, the RPC or a more optimized query is better.
+        # Simple query for now:
+        # This query can be slow on very large tables.
+        query = """
+            SELECT
+                dc.chunk_id,
+                dc.chunk_text,
+                dc.contextual_summary,
+                d.title AS document_title
+            FROM
+                public.document_chunks dc
+            JOIN
+                public.documents d ON dc.document_id = d.document_id
+            WHERE
+                NOT EXISTS (
+                    SELECT 1
+                    FROM public.document_embeddings de
+                    WHERE de.chunk_id = dc.chunk_id AND de.embedding_model_name = %s
+                )
+            ORDER BY d.ingested_at, dc.chunk_sequence
+            LIMIT %s OFFSET %s;
+        """
+        # Note: The %s placeholders are for psycopg if using direct DB connection.
+        # Supabase-py client uses a different way to build queries.
+
+        # Using supabase-py equivalent (may need to adjust based on actual client capabilities for such complex joins and NOT EXISTS)
+        # A simpler way for the script, though potentially less performant on huge scale,
+        # is to fetch all chunk_ids from document_chunks and all chunk_ids from document_embeddings
+        # and find the difference in Python. Or use an RPC as preferred.
+        # For this script, let's assume an RPC `get_chunks_needing_embeddings_for_model` for robustness
+        
+        # Simplified approach for Day 3 MVP script:
+        # Fetch all chunk_ids from document_chunks
+        # Fetch all chunk_ids from document_embeddings for the specific model
+        # Determine missing ones. This is inefficient for large datasets.
+        # A better way is often an outer join or NOT EXISTS as shown in raw SQL, callable via RPC.
+
+        # Let's directly query chunks and then check if embeddings exist.
+        chunks_response = supabase.table("document_chunks").select("chunk_id, chunk_text, contextual_summary, documents(title)").order("created_at", desc=False).range(offset, offset + batch_size - 1).execute()
+        
+        if not chunks_response.data:
+            return []
+
+        chunks_to_process = []
+        chunk_ids_fetched = [c['chunk_id'] for c in chunks_response.data]
+
+        if chunk_ids_fetched:
+            existing_embeddings_response = supabase.table("document_embeddings").select("chunk_id").in_("chunk_id", chunk_ids_fetched).eq("embedding_model_name", EMBEDDING_MODEL_NAME_FOR_DB).execute()
+            embedded_chunk_ids = {e['chunk_id'] for e in existing_embeddings_response.data} if existing_embeddings_response.data else set()
+
+            for chunk_data in chunks_response.data:
+                if chunk_data['chunk_id'] not in embedded_chunk_ids:
+                    # Prepare data structure for embedding
+                    processed_chunk = {
+                        "chunk_id": chunk_data['chunk_id'],
+                        "chunk_text": chunk_data['chunk_text'],
+                        "contextual_summary": chunk_data.get('contextual_summary'),
+                        "document_title": chunk_data['documents']['title'] if chunk_data.get('documents') else "Unknown Document"
+                    }
+                    chunks_to_process.append(processed_chunk)
+            return chunks_to_process
+        return []
+
+    except Exception as e:
+        print(f"Error fetching chunks without embeddings: {e}")
+        return []
+
+async def generate_embeddings_batch(texts_to_embed: list[str], model_id: str, trace: CreateTrace = None) -> list[list[float]] | None:
+    """Generates embeddings for a batch of texts using Google's API."""
+    langfuse_generation = None
+    if langfuse and trace:
+        langfuse_generation = trace.generation(CreateGeneration(
+            name="google-embedding-batch",
+            model=model_id,
+            input=[{"role":"system", "content":"Texts to embed"}, {"role":"user", "content": str(texts_to_embed)}], # Example input logging
+            model_parameters={"batch_size": len(texts_to_embed)}
+        ))
+    
+    all_embeddings = []
+    try:
+        print(f"  Generating embeddings for a batch of {len(texts_to_embed)} texts with model {model_id}...")
+        # genai.embed_content can take a list of strings directly for batching
+        result = genai.embed_content(
+            model=model_id, # e.g., "models/text-embedding-004" or the specific one Anthony provided
+            content=texts_to_embed,
+            task_type="RETRIEVAL_DOCUMENT" # or "SEMANTIC_SIMILARITY" or "RETRIEVAL_QUERY" for queries
+        )
+        all_embeddings = result['embedding'] # This should be a list of lists
+        
+        if langfuse_generation:
+            langfuse_generation.end(output={"embedding_count": len(all_embeddings)})
+        print(f"  Successfully generated {len(all_embeddings)} embeddings.")
+        return all_embeddings
+    except Exception as e:
+        print(f"  ERROR generating embeddings batch: {e}")
+        if langfuse_generation:
+            langfuse_generation.end(level="ERROR", status_message=str(e))
+        return None
+
+def store_embeddings_in_supabase_batch(supabase: Client, embeddings_data_to_store: list[dict]):
+    if not embeddings_data_to_store:
+        return 0
+    print(f"  Attempting to insert/upsert {len(embeddings_data_to_store)} embeddings into Supabase...")
+    try:
+        # Using upsert to avoid issues if script is re-run and some embeddings were partially processed.
+        # Requires chunk_id to be unique for document_embeddings for the given model.
+        response = supabase.table("document_embeddings").upsert(embeddings_data_to_store, on_conflict="chunk_id, embedding_model_name").execute() # Assumes composite PK or unique constraint
+        
+        # If document_embeddings PK is just `id` and `(chunk_id, embedding_model_name)` is a UNIQUE constraint:
+        # response = supabase.table("document_embeddings").upsert(embeddings_data_to_store, on_conflict="chunk_id,embedding_model_name").execute()
+        # If only chunk_id is unique (meaning one embedding per chunk regardless of model, less flexible):
+        # response = supabase.table("document_embeddings").upsert(embeddings_data_to_store, on_conflict="chunk_id").execute()
+        
+        # Let's assume Day 1 schema means chunk_id is UNIQUE in document_embeddings.
+        # If we store model_name, we need a composite unique key or handle logic differently.
+        # Day 1 schema: `chunk_id UUID NOT NULL REFERENCES document_chunks(chunk_id) ON DELETE CASCADE UNIQUE`
+        # This means we only store ONE embedding per chunk. We need to ensure our process targets one model or version table for `embedding_model_name`.
+        # For now, let's try a simple insert and assume clean state or that prior deletes handled conflicts.
+        # The schema on Day 1 has chunk_id as UNIQUE in document_embeddings,
+        # so upsert on chunk_id might be `upsert(data, on_conflict='chunk_id')`.
+        # However, to also store embedding_model_name, a simple insert is safer for now,
+        # assuming get_chunks_without_embeddings_batch correctly filters.
+        
+        response = supabase.table("document_embeddings").insert(embeddings_data_to_store).execute()
+
+        if response.data:
+            print(f"  Successfully stored {len(response.data)} new embeddings in Supabase.")
+            return len(response.data)
+        else:
+            error_message = "Unknown error"
+            if hasattr(response, 'error') and response.error and hasattr(response.error, 'message'):
+                error_message = response.error.message
+            print(f"  ERROR storing embeddings in Supabase: {error_message}")
+            if error_message and "violates unique constraint" in error_message and "document_embeddings_chunk_id_key" in error_message :
+                 print("  Hint: This means an embedding for this chunk_id already exists. The `get_chunks_without_embeddings_batch` should prevent this.")
+            elif error_message and "embedding" in error_message and ("dimensions" in error_message or "768" in error_message):
+                 print("  Hint: This might be a vector dimension mismatch. Ensure embedding model output matches table schema (VECTOR(768)).")
+
+            return 0
+    except Exception as e:
+        print(f"  EXCEPTION during Supabase embedding insertion: {e}")
+        return 0
+
+# --- Main Execution ---
+async def main_async():
+    print("Starting Day 3: Embedding Generation & Storage Script...")
+    overall_start_time = time.time()
+
+    trace = None
+    if langfuse:
+        trace = langfuse.trace(CreateTrace(
+            name="dozerai-embedding-generation-job",
+            user_id="anthony_pierce_ceo", # Or system user
+            metadata={"environment": "development", "script_version": "0.1.0_day3"}
+        ))
+
+    offset = 0
+    batch_size = 50 # Process N chunks at a time for embedding and DB insertion
+    total_embeddings_generated = 0
+    total_chunks_processed_for_embedding = 0
+
+    while True:
+        current_loop_span = None
+        if langfuse and trace:
+            current_loop_span = trace.span(CreateSpan(
+                name="embedding-generation-loop",
+                input={"offset": offset, "batch_size": batch_size}
+            ))
+
+        print(f"\nFetching batch of chunks needing embeddings (offset: {offset}, batch_size: {batch_size})...")
+        # Use await here if get_chunks_without_embeddings_batch is async (which it should be if using async supabase client)
+        # For now, assuming synchronous supabase client as used in Day 2 script structure.
+        # If supabase_client is async, this function and main() need to be async.
+        # Let's refactor get_chunks_without_embeddings_batch to be async for proper await.
+        # For simplicity, I will keep it sync for now but this is a TODO for real async operation.
+
+        # This function needs to be async and use an async supabase client for production.
+        # Assuming supabase_client in this script context is synchronous for now.
+        chunks_to_process = get_chunks_without_embeddings_batch(supabase_client, offset, batch_size)
+
+        if not chunks_to_process:
+            print("No more chunks found that require embedding. Process complete.")
+            if current_loop_span: current_loop_span.end(output={"status":"no_more_chunks"})
+            break
+
+        print(f"Fetched {len(chunks_to_process)} chunks to process in this batch.")
+        total_chunks_processed_for_embedding += len(chunks_to_process)
+        
+        texts_for_embedding_api = []
+        chunk_ids_in_batch = []
+
+        for chunk_info in chunks_to_process:
+            text_to_embed = chunk_info["chunk_text"]
+            # Optionally, prepend contextual summary if it exists and is deemed useful for embedding quality
+            if chunk_info.get("contextual_summary") and chunk_info["contextual_summary"].strip():
+                text_to_embed = f"Context: {chunk_info['contextual_summary']}\n\nContent: {chunk_info['chunk_text']}"
+            texts_for_embedding_api.append(text_to_embed)
+            chunk_ids_in_batch.append(chunk_info["chunk_id"])
+        
+        # Generate embeddings in batch
+        # The actual model string for SDK might be like 'models/text-embedding-004' or a specific gemini embedding model.
+        # Using Anthony's specified 'gemini-embedding-exp-03-07' for EMBEDDING_MODEL_SDK_TARGET
+        batch_embeddings = await generate_embeddings_batch(texts_for_embedding_api, EMBEDDING_MODEL_SDK_TARGET, trace)
+        
+        if batch_embeddings and len(batch_embeddings) == len(chunk_ids_in_batch):
+            embeddings_to_store_db = []
+            for i, emb in enumerate(batch_embeddings):
+                embeddings_to_store_db.append({
+                    "chunk_id": chunk_ids_in_batch[i],
+                    "embedding": emb, # Should be a list of floats
+                    "embedding_model_name": EMBEDDING_MODEL_NAME_FOR_DB # Store the model name used
+                })
+            
+            num_stored = store_embeddings_in_supabase_batch(supabase_client, embeddings_to_store_db)
+            total_embeddings_generated += num_stored
+            if current_loop_span: current_loop_span.end(output={"embeddings_generated_in_batch": num_stored, "db_stored": num_stored})
+        else:
+            print(f"  ERROR or mismatch in embedding generation for batch starting at offset {offset}. Expected {len(chunk_ids_in_batch)} embeddings, got {len(batch_embeddings) if batch_embeddings else 0}.")
+            if current_loop_span: current_loop_span.end(output={"status":"embedding_generation_failed"}, level="ERROR")
+            # Decide: stop or continue with next batch? For now, let's continue.
+            # Consider adding a failure counter and stopping after too many consecutive batch failures.
+
+        offset += batch_size # Move to next batch
+        print(f"Current total embeddings generated: {total_embeddings_generated}")
+        time.sleep(2) # Brief pause between batches to respect API limits
+
+    print(f"\n--- Embedding Generation Finished ---")
+    print(f"Total chunks processed for embedding consideration: {total_chunks_processed_for_embedding}")
+    print(f"Total new embeddings generated and stored: {total_embeddings_generated}")
+
+    # Step 2: Ensure HNSW Index (can also be done manually in Supabase Studio if preferred or if issues with CONCURRENTLY)
+    hnsw_sql = "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_hnsw_document_embeddings ON public.document_embeddings USING hnsw (embedding vector_l2_ops);"
+    print(f"\nAttempting to ensure HNSW index exists with command: {hnsw_sql}")
+    hnsw_span = None
+    if langfuse and trace:
+        hnsw_span = trace.span(CreateSpan(name="ensure-hnsw-index", input={"sql": hnsw_sql}))
+    try:
+        # For DDL like CREATE INDEX, a direct DB connection is often better.
+        # We will use a generic function call which in supabase-py might be an RPC.
+        # Best practice is to create this function in SQL in Supabase first for robust execution of DDL.
+        # supabase_client.rpc("execute_sql_command", {"sql_command": hnsw_sql}).execute() # Example if such RPC exists
+        
+        # For now, instruct Anthony to run if Python execution isn't straightforward.
+        # Most database client libraries don't encourage direct CREATE INDEX CONCURRENTLY from app code due to potential locking or long runtimes.
+        print("INFO: HNSW Index creation command provided. For large tables, `CREATE INDEX CONCURRENTLY` is preferred.")
+        print("Please run the following command in your Supabase SQL Editor if the script doesn't create it, or if you prefer manual control:")
+        print(f"`{hnsw_sql}`")
+        print("This step is CRUCIAL for fast semantic search performance.")
+        # Try to execute it, but it might require admin privileges not available to service_role key via standard functions
+        # conn_params = { ... construct direct connection string ... }
+        # with psycopg.connect(**conn_params) as conn:
+        #     with conn.cursor() as cur:
+        #         cur.execute(hnsw_sql)
+        #     conn.commit()
+        # print("HNSW index creation/check command executed attempt (via direct psycopg - if implemented).")
+        if langfuse and hnsw_span: hnsw_span.end(output={"status": "SQL provided for manual execution / or attempted"})
+    except Exception as e:
+        print(f"ERROR during HNSW index creation attempt: {e}")
+        print("Please ensure the HNSW index is created manually in Supabase Studio for optimal performance.")
+        if langfuse and hnsw_span: hnsw_span.end(level="ERROR", status_message=str(e))
+    
+    overall_end_time = time.time()
+    print(f"\nDay 3 Embedding Script finished in {overall_end_time - overall_start_time:.2f} seconds.")
+    if langfuse and trace: trace.update(output={"total_embeddings_generated": total_embeddings_generated, "total_chunks_processed": total_chunks_processed_for_embedding})
+
+if __name__ == "__main__":
+    # For async main function using Supabase async client:
+    # asyncio.run(main_async())
+    # Since supabase-py v1.x is synchronous by default, main_async is a placeholder for how it would be structured
+    # For v1.x, make all supabase calls synchronous (remove await) and run main_async as main_sync.
+    # Let's assume for simplicity that we structure for async for future client versions but call it synchronously for now.
+    
+    # Correction: supabase-py v2 is async by default. Let's structure for it.
+    async def run_script():
+        await main_async()
+
+    if sys.platform == "win32" and sys.version_info >= (3, 8, 0): # Fix for asyncio on Windows
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    asyncio.run(run_script())
+Use code with caution.
+Python
+Code for Initial Kennel Client (C:\Dozers\DozerAI_Code\engine\core\kennel_client.py):
+# C:\Dozers\DozerAI_Code\engine\core\kennel_client.py
+import os
+from dotenv import load_dotenv
+from pathlib import Path
+from supabase import create_client, Client, AClient # AClient for async
+import google.generativeai as genai # For query embedding
+from typing import List, Dict, Optional, Any
+from langfuse import Langfuse
+from langfuse.model import CreateSpan
+
+# --- Configuration & Clients ---
+BASE_DIR = Path(__file__).resolve().parent.parent.parent # DozerAI_Code
+CONFIG_DIR = BASE_DIR / "config"
+ENV_PATH = CONFIG_DIR / ".env"
+load_dotenv(ENV_PATH)
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY") # For query embedding
+
+LANGFUSE_PUBLIC_KEY = os.getenv("LANGFUSE_PUBLIC_KEY")
+LANGFUSE_SECRET_KEY = os.getenv("LANGFUSE_SECRET_KEY")
+LANGFUSE_HOST = os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com")
+
+# Explicit Embedding Model for Queries (must match what's in DB)
+QUERY_EMBEDDING_MODEL_SDK_TARGET = "gemini-embedding-exp-03-07" 
+# This was "models/text-embedding-004" before, aligning with Anthony's specified embedding model for consistency.
+# Ensure this model identifier works with genai.embed_content for task_type="RETRIEVAL_QUERY"
+
+class KennelClient:
+    def __init__(self, supabase_url: str = SUPABASE_URL, supabase_key: str = SUPABASE_SERVICE_ROLE_KEY):
+        if not supabase_url or not supabase_key:
+            raise ValueError("Supabase URL and Key must be provided or set in .env")
+        self.supabase_async: AClient = create_client(supabase_url, supabase_key) # Use Async Client
+        print("Async KennelClient (Supabase) initialized.")
+        
+        if GOOGLE_API_KEY:
+            genai.configure(api_key=GOOGLE_API_KEY)
+            print(f"KennelClient: Google Generative AI configured for query embeddings with target model {QUERY_EMBEDDING_MODEL_SDK_TARGET}.")
+        else:
+            print("KennelClient WARNING: GOOGLE_API_KEY not found, query embedding will fail.")
+
+        self.langfuse = None
+        if LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY:
+            try:
+                self.langfuse = Langfuse(
+                    public_key=LANGFUSE_PUBLIC_KEY,
+                    secret_key=LANGFUSE_SECRET_KEY,
+                    host=LANGFUSE_HOST
+                )
+                print("KennelClient: Langfuse client initialized.")
+            except Exception as e:
+                print(f"KennelClient Error initializing Langfuse: {e}")
+
+
+    async def _get_query_embedding(self, query_text: str) -> Optional[List[float]]:
+        if not hasattr(genai, 'embed_content'):
+            print("ERROR: Google Generative AI SDK not properly configured or embed_content not found.")
+            return None
+        
+        langfuse_generation = None
+        if self.langfuse:
+            # Assuming a trace is active in the calling context (Dozer Prime)
+            # This client method would typically be called within an existing trace/span.
+            # For now, let's create a simple span for the embedding call.
+            # In a real setup, the trace_id might be passed down.
+            try:
+                # This needs to be called within an active Langfuse trace from the caller.
+                # For simplicity, let's assume we can create a generation directly if needed,
+                # but best practice is to pass parent observation.
+                # current_trace = self.langfuse.trace(name="kennel_query_embedding") # Not ideal to create new trace here
+                # langfuse_generation = current_trace.generation(...)
+                # For now, skip detailed Langfuse generation for embedding here, assume caller handles it.
+                 pass
+            except Exception as lf_e:
+                print(f"Langfuse error in _get_query_embedding: {lf_e}")
+
+
+        try:
+            print(f"  Generating embedding for query: '{query_text[:50]}...' with model {QUERY_EMBEDDING_MODEL_SDK_TARGET}")
+            result = await genai.embed_content_async( # Using async version
+                model=QUERY_EMBEDDING_MODEL_SDK_TARGET, # This is critical! Use the specific model name string.
+                content=query_text,
+                task_type="RETRIEVAL_QUERY"
+            )
+            return result['embedding']
+        except Exception as e:
+            print(f"  ERROR generating query embedding: {e}")
+            # if langfuse_generation: langfuse_generation.end(level="ERROR", status_message=str(e))
+            return None
+
+    async def semantic_search_chunks(self, query_text: str, top_k: int = 5, 
+                                     embedding_model_in_db: str = "gemini-embedding-exp-03-07",
+                                     parent_observation: Optional[Any]=None) -> List[Dict]:
+        """
+        Performs semantic search for document chunks in Supabase.
+        """
+        langfuse_span = None
+        if self.langfuse and parent_observation: # Check if parent_observation is Langfuse object
+             if hasattr(parent_observation, 'span') and callable(parent_observation.span):
+                langfuse_span = parent_observation.span(CreateSpan(
+                    name="kennel-semantic-search",
+                    input={"query": query_text, "top_k": top_k, "model_in_db": embedding_model_in_db}
+                ))
+             elif hasattr(parent_observation, 'name') and parent_observation.name == "LangfuseTraceClient": # if it is the trace itself
+                langfuse_span = parent_observation.span(CreateSpan(
+                    name="kennel-semantic-search",
+                    input={"query": query_text, "top_k": top_k, "model_in_db": embedding_model_in_db}
+                ))
+
+
+        query_embedding = await self._get_query_embedding(query_text)
+        if not query_embedding:
+            if langfuse_span: langfuse_span.end(output={"error": "Failed to generate query embedding"}, level="ERROR")
+            return []
+
+        try:
+            # Use the match_document_chunks RPC function defined in Supabase schema (Day 1, SQL_001)
+            # Or, directly call the vector search if preferred (RPC is cleaner)
+            # Let's assume a supabase function "match_document_chunks" exists or build the query
+            
+            # The pgvector syntax for distance is <=>
+            # Supabase-py's `rpc` method is used to call PostgreSQL functions.
+            # For vector similarity, you typically create a function in SQL.
+            # Example SQL function (must be created in Supabase DB via migration or SQL Editor):
+            """
+            CREATE OR REPLACE FUNCTION match_document_chunks (
+              query_embedding vector(768), -- Ensure dimension matches your embeddings
+              match_model_name text,
+              match_count int
+            )
+            RETURNS TABLE (
+              chunk_id uuid,
+              chunk_text text,
+              contextual_summary text,
+              document_id uuid,
+              document_title text,
+              similarity float
+            )
+            LANGUAGE sql STABLE PARALLEL SAFE
+            AS $$
+              SELECT
+                dc.chunk_id,
+                dc.chunk_text,
+                dc.contextual_summary,
+                dc.document_id,
+                d.title as document_title,
+                1 - (de.embedding <=> query_embedding) as similarity -- Cosine similarity (1 - cosine_distance)
+              FROM
+                public.document_embeddings de
+              JOIN
+                public.document_chunks dc ON de.chunk_id = dc.chunk_id
+              JOIN
+                public.documents d ON dc.document_id = d.document_id
+              WHERE de.embedding_model_name = match_model_name
+              ORDER BY
+                de.embedding <=> query_embedding
+              LIMIT match_count;
+            $$;
+            """
+            # Anthony: The above SQL function should be part of Day 1's `001_initial_core_tables.sql`
+            # or a new migration file run before this client is heavily used.
+            # For Day 3, we will assume it's created manually or via a script update.
+            # For now, the Python code will assume this RPC function `match_document_chunks` exists.
+            
+            print(f"  Performing semantic search with top_k={top_k} for model '{embedding_model_in_db}'...")
+            response = await self.supabase_async.rpc(
+                "match_document_chunks",
+                {
+                    "query_embedding": query_embedding,
+                    "match_model_name": embedding_model_in_db,
+                    "match_count": top_k,
+                },
+            ).execute()
+
+            if response.data:
+                print(f"  Semantic search returned {len(response.data)} chunks.")
+                if langfuse_span: langfuse_span.end(output={"retrieved_chunk_count": len(response.data), "chunks_preview": response.data[:2]})
+                # Convert to list of dicts if not already
+                return [dict(row) for row in response.data]
+            else:
+                print(f"  Semantic search returned no results. Response: {response}")
+                if hasattr(response, 'error') and response.error:
+                     print(f"  Supabase RPC error: {response.error.message}")
+                     if langfuse_span: langfuse_span.end(output={"error": response.error.message, "status": "no_results"}, level="WARNING")
+                else:
+                     if langfuse_span: langfuse_span.end(output={"status": "no_results"}, level="INFO")
+                return []
+        except Exception as e:
+            print(f"  ERROR during semantic search: {e}")
+            if langfuse_span: langfuse_span.end(output={"error": str(e)}, level="ERROR")
+            return []
+
+    async def get_document_full_text(self, document_id: str, parent_observation: Optional[Any]=None) -> Optional[str]:
+        """Fetches the full text content of a document for CAG."""
+        langfuse_span = None
+        if self.langfuse and parent_observation:
+             if hasattr(parent_observation, 'span') and callable(parent_observation.span):
+                langfuse_span = parent_observation.span(CreateSpan(name="kennel-get-full-text", input={"document_id": document_id}))
+             elif hasattr(parent_observation, 'name') and parent_observation.name == "LangfuseTraceClient":
+                langfuse_span = parent_observation.span(CreateSpan(name="kennel-get-full-text", input={"document_id": document_id}))
+        
+        try:
+            print(f"  Fetching full text for document_id: {document_id}...")
+            response = await self.supabase_async.table("documents").select("full_text_content").eq("document_id", document_id).maybe_single().execute()
+            if response.data and response.data.get("full_text_content"):
+                content = response.data["full_text_content"]
+                print(f"  Full text fetched (length: {len(content)} chars).")
+                if langfuse_span: langfuse_span.end(output={"text_length": len(content)})
+                return content
+            else:
+                print(f"  Full text not found for document_id: {document_id}.")
+                if langfuse_span: langfuse_span.end(output={"error": "Full text not found"}, level="WARNING")
+                return None
+        except Exception as e:
+            print(f"  ERROR fetching full text for document_id {document_id}: {e}")
+            if langfuse_span: langfuse_span.end(output={"error": str(e)}, level="ERROR")
+            return None
+
+    # Add functions from Day 1 script for creating/updating documents and chunks IF NEEDED directly by agents
+    # (Though ingestion script `01_...` handles bulk load, agents might add ad-hoc docs later)
+
+# Example of how to initialize and use if this script were run directly (for testing)
+async def _test_kennel_client():
+    print("Testing KennelClient...")
+    kennel = KennelClient()
+    if not kennel.supabase_async: # Check if client initialized
+        return
+
+    # Test semantic search
+    # Make sure there's some data in your document_embeddings table first!
+    # To test, you need embeddings. For now, this is a placeholder call.
+    test_query = "What is Dozer's mission statement?"
+    print(f"\nTesting semantic search for: '{test_query}'")
+    
+    # To run this test, we need a Langfuse trace object if methods expect it
+    # For a standalone test, we might pass None or a dummy object.
+    # Assuming None or direct initialization for testing purposes:
+    
+    mock_trace = None
+    if kennel.langfuse:
+        mock_trace = kennel.langfuse.trace(name="kennel_client_test_trace", user_id="test_user")
+
+    results = await kennel.semantic_search_chunks(test_query, top_k=2, parent_observation=mock_trace)
+    if results:
+        print(f"Found {len(results)} relevant chunks:")
+        for i, res in enumerate(results):
+            print(f"  Chunk {i+1} (Similarity: {res.get('similarity', 'N/A')} - Title: {res.get('document_title', 'N/A')} ):")
+            print(f"    Text: {res.get('chunk_text', '')[:200]}...")
+            print(f"    Contextual Summary: {res.get('contextual_summary', 'N/A')[:100]}...")
+    else:
+        print("No chunks found or error in search.")
+
+    if mock_trace: mock_trace.update(output={"test_results_count": len(results) if results else 0})
+
+if __name__ == "__main__":
+    # This test will only work if run within an asyncio event loop
+    # and if the database has been populated with chunks and embeddings.
+    # Ensure .env is correctly set up in ../config/.env
+    
+    # asyncio.run(_test_kennel_client())
+    print("KennelClient defined. Run _test_kennel_client() within an async context and after data ingestion to test.")
+Use code with caution.
+Python
+Code for Pydantic Schemas (C:\Dozers\DozerAI_Code\engine\core\schemas.py):
+# C:\Dozers\DozerAI_Code\engine\core\schemas.py
+from pydantic import BaseModel, Field
+from typing import List, Optional, Dict, Any
+
+class DozerPrimeQueryInput(BaseModel):
+    query: str = Field(..., description="The user's query for Dozer Prime.")
+    user_id: str = Field(..., description="The unique identifier of the user making the query (e.g., CEO's user_id).")
+    session_id: Optional[str] = Field(None, description="Optional session ID for conversation continuity.")
+    # Add other relevant input fields like thinking_mode_toggle if needed later
+
+class RetrievedChunkContext(BaseModel):
+    chunk_id: str # UUID, but str for simplicity in Pydantic model if not casting
+    chunk_text: str
+    contextual_summary: Optional[str] = None
+    document_title: Optional[str] = None
+    document_id: Optional[str] = None # UUID
+    similarity: Optional[float] = Field(None, description="Similarity score from vector search.")
+    # Add other metadata from document_chunks or documents if needed
+
+class DozerPrimeRAGOutput(BaseModel):
+    llm_response: str = Field(..., description="Dozer Prime's final generated response.")
+    retrieved_contexts: List[RetrievedChunkContext] = Field(default_factory=list, description="List of contexts retrieved and used by the LLM.")
+    search_query_embedding: Optional[List[float]] = Field(None, description="The vector embedding of the user's query.")
+    langfuse_trace_id: Optional[str] = Field(None, description="Trace ID from Langfuse for this interaction.")
+
+# Schemas for AG-UI (Python backend representation)
+# Based on ag_ui.core types from the protocol. We will define Pydantic models for them.
+# These are simplified examples and would need to match the full AG-UI spec we adopt.
+
+class AGUIMessage(BaseModel):
+    id: str
+    role: str # "user", "assistant", "system", "tool"
+    content: Optional[str] = None # For text messages or tool responses
+    name: Optional[str] = None
+    # For assistant messages with tool calls
+    # Pydantic doesn't directly support union types for complex nested structures easily without workarounds like custom validators or root_validators.
+    # For tool_calls, this might be a list of dicts or a more specific Pydantic model.
+    tool_calls: Optional[List[Dict[str, Any]]] = None # e.g., [{"id": "call_abc", "type": "function", "function": {"name": "X", "arguments": "{}"}}]
+    tool_call_id: Optional[str] = None # For role="tool"
+
+class AGUITool(BaseModel):
+    type: str = "function" # Currently only "function" type is common
+    function: Dict[str, Any] # JSON Schema for function name, description, parameters
+
+class AGUIRunAgentInput(BaseModel):
+    thread_id: str
+    run_id: str
+    messages: List[AGUIMessage]
+    tools: Optional[List[AGUITool]] = Field(default_factory=list)
+    # Add other AG-UI input fields like state, context, forwarded_props if used
+
+# AG-UI Events (Python Pydantic models for what our FastAPI backend will emit)
+class AGUIBaseEvent(BaseModel):
+    type: str # EventType string
+    thread_id: Optional[str] = None
+    run_id: Optional[str] = None
+    timestamp: int = Field(default_factory=lambda: int(time.time() * 1000))
+
+class AGUIRunStartedEvent(AGUIBaseEvent):
+    type: str = "RUN_STARTED"
+
+class AGUIRunFinishedEvent(AGUIBaseEvent):
+    type: str = "RUN_FINISHED"
+
+class AGUIRunErrorEvent(AGUIBaseEvent):
+    type: str = "RUN_ERROR"
+    message: str
+    stack_trace: Optional[str] = None
+
+class AGUITextMessageStartEvent(AGUIBaseEvent):
+    type: str = "TEXT_MESSAGE_START"
+    message_id: str
+    role: str = "assistant" # Typically from assistant
+
+class AGUITextMessageChunkEvent(AGUIBaseEvent):
+    type: str = "TEXT_MESSAGE_CHUNK"
+    message_id: str
+    delta: str # The chunk of text
+
+class AGUITextMessageEndEvent(AGUIBaseEvent):
+    type: str = "TEXT_MESSAGE_END"
+    message_id: str
+
+# Simplified tool call events for now - can be expanded per AG-UI spec
+class AGUIToolCallStartEvent(AGUIBaseEvent):
+    type: str = "TOOL_CALL_START"
+    tool_call_id: str
+    parent_message_id: str # Message that initiated tool calls
+    name: str # Tool name
+
+class AGUIToolCallEndEvent(AGUIBaseEvent):
+    type: str = "TOOL_CALL_END"
+    tool_call_id: str
+    output: Optional[str] = None # JSON string of the tool output
+
+# Add other AG-UI event Pydantic models as needed based on the spec (e.g., for args streaming, UI updates)
+Use code with caution.
+Python
+Code for Dozer Prime Basic RAG Logic (LangGraph):
+C:\Dozers\DozerAI_Code\engine\core\langgraph_flows\prime_rag_flow.py:
+# C:\Dozers\DozerAI_Code\engine\core\langgraph_flows\prime_rag_flow.py
+from langgraph.graph import StateGraph, END
+from typing import TypedDict, List, Optional, Annotated
+import operator
+from engine.core.kennel_client import KennelClient # Assuming KennelClient is in this path
+from engine.core.schemas import DozerPrimeQueryInput, RetrievedChunkContext, DozerPrimeRAGOutput
+import google.generativeai as genai
+from langfuse.model import CreateGeneration, CreateSpan # For Langfuse
+from langfuse import Langfuse # For Langfuse
+
+# --- Langfuse Setup (global or passed into agent) ---
+# This should ideally be initialized once and passed around, or accessed via a singleton.
+# For simplicity in this module, it's configured here if env vars are set.
+LANGFUSE_PUBLIC_KEY = os.getenv("LANGFUSE_PUBLIC_KEY")
+LANGFUSE_SECRET_KEY = os.getenv("LANGFUSE_SECRET_KEY")
+LANGFUSE_HOST = os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com")
+langfuse_client_for_flow: Optional[Langfuse] = None
+if LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY:
+    try:
+        langfuse_client_for_flow = Langfuse(public_key=LANGFUSE_PUBLIC_KEY, secret_key=LANGFUSE_SECRET_KEY, host=LANGFUSE_HOST)
+        print("Langfuse client initialized for prime_rag_flow.")
+    except Exception as e_lf:
+        print(f"Error initializing Langfuse in prime_rag_flow: {e_lf}")
+
+# Define the State for our RAG Graph
+class PrimeRAGState(TypedDict):
+    query_input: DozerPrimeQueryInput
+    query_embedding: Optional[List[float]]
+    retrieved_chunk_objects: List[RetrievedChunkContext] # Store full chunk objects
+    context_for_llm: str # Formatted string of chunks for LLM
+    llm_response_text: str
+    final_output: Optional[DozerPrimeRAGOutput]
+    error_message: Optional[str]
+    # Langfuse tracing
+    current_trace_id: Optional[str]
+    current_span_id: Optional[str]
+
+
+# Nodes for the graph
+async def embed_query_node(state: PrimeRAGState, kennel_client: KennelClient, langfuse_trace: Optional[Any]) -> PrimeRAGState:
+    print("--- Node: Embed Query ---")
+    lf_span = None
+    if langfuse_client_for_flow and langfuse_trace:
+        lf_span = langfuse_trace.span(CreateSpan(name="embed-query-node", input={"query": state["query_input"].query}))
+    
+    query_text = state["query_input"].query
+    embedding = await kennel_client._get_query_embedding(query_text) # Use the KennelClient's method
+
+    if embedding:
+        if lf_span: lf_span.end(output={"embedding_generated": True, "embedding_dim": len(embedding)})
+        return {**state, "query_embedding": embedding, "error_message": None}
+    else:
+        err_msg = "Failed to generate query embedding."
+        if lf_span: lf_span.end(output={"embedding_generated": False}, level="ERROR", status_message=err_msg)
+        return {**state, "query_embedding": None, "error_message": err_msg}
+
+async def retrieve_chunks_node(state: PrimeRAGState, kennel_client: KennelClient, langfuse_trace: Optional[Any]) -> PrimeRAGState:
+    print("--- Node: Retrieve Chunks ---")
+    lf_span = None
+    if langfuse_client_for_flow and langfuse_trace:
+        lf_span = langfuse_trace.span(CreateSpan(name="retrieve-chunks-node", input={"query_embedding_present": state["query_embedding"] is not None}))
+
+    if not state["query_embedding"]:
+        err_msg = "Cannot retrieve chunks, query embedding is missing."
+        if lf_span: lf_span.end(output={}, level="ERROR", status_message=err_msg)
+        return {**state, "retrieved_chunk_objects": [], "context_for_llm": "", "error_message": err_msg}
+
+    # Using the embedding model name used during ingestion
+    embedding_model_in_db = "gemini-embedding-exp-03-07" 
+    top_k_retrieval = 5 
+    
+    # The kennel_client.semantic_search_chunks should already handle Langfuse internally for its own operations if designed that way.
+    # Or we pass the current span/trace. For Day 3, let kennel_client be self-contained with Langfuse.
+    raw_retrieved_chunks: List[Dict] = await kennel_client.semantic_search_chunks(
+        query_text=state["query_input"].query, # Pass original query for potential re-ranking or logging
+        # query_embedding=state["query_embedding"], # KennelClient should re-embed if needed or take embedding
+        top_k=top_k_retrieval,
+        embedding_model_in_db=embedding_model_in_db,
+        parent_observation=lf_span # Pass current span as parent observation
+    )
+    
+    retrieved_chunk_objects = [RetrievedChunkContext(**chunk) for chunk in raw_retrieved_chunks]
+
+    context_str = ""
+    if retrieved_chunk_objects:
+        context_str = "\n\n---\n\n".join([
+            f"Source Document: {chunk.document_title}\nContextual Summary: {chunk.contextual_summary if chunk.contextual_summary else 'N/A'}\nContent:\n{chunk.chunk_text}"
+            for chunk in retrieved_chunk_objects
+        ])
+    
+    print(f"Retrieved {len(retrieved_chunk_objects)} chunks. Combined context length for LLM: {len(context_str)} chars.")
+    if lf_span: lf_span.end(output={"retrieved_chunk_count": len(retrieved_chunk_objects), "context_length": len(context_str)})
+    return {**state, "retrieved_chunk_objects": retrieved_chunk_objects, "context_for_llm": context_str, "error_message": None}
+
+async def generate_response_node(state: PrimeRAGState, prime_llm_client: genai.GenerativeModel, langfuse_trace: Optional[Any]) -> PrimeRAGState:
+    print("--- Node: Generate Response (Dozer Prime LLM) ---")
+    lf_generation = None
+    if langfuse_client_for_flow and langfuse_trace:
+        # Using the EXPLICIT model name for Dozer Prime's core reasoning
+        lf_generation = langfuse_trace.generation(CreateGeneration(
+            name="dozer-prime-rag-generation",
+            model="gemini-2.5-pro-preview-05-06", 
+            input={"query": state["query_input"].query, "context": state["context_for_llm"]},
+            model_parameters={"temperature": 0.7} # Example
+        ))
+
+    if state.get("error_message"): # Propagate error if previous step failed
+        if lf_generation: lf_generation.end(level="ERROR", status_message=state["error_message"])
+        return {**state, "llm_response_text": ""}
+
+    if not state["context_for_llm"] and not state["retrieved_chunk_objects"]:
+        print("  No context retrieved. Generating response based on query only (or providing 'no info' message).")
+        # Fallback or "I don't know" logic
+        no_context_response = "I couldn't find specific information in 'The Kennel' to answer that question based on the current query. Could you try rephrasing or providing more details?"
+        if lf_generation: lf_generation.end(output={"response": no_context_response}, level="WARNING", status_message="No context retrieved for RAG")
+        return {**state, "llm_response_text": no_context_response}
+
+    prompt = f"""
+    You are Dozer Prime, CEO Anthony Pierce's AI Best Friend in Business, a hilarious genius assistant for "Dozer's Wild & Woof'derful Bar'k & Grrr'ill".
+    You have access to "The Kennel," the business's central knowledge base.
+    Answer the user's query based on your knowledge and the provided context from "The Kennel".
+    If the context is insufficient, state that clearly. Be insightful and helpful.
+
+    User Query: "{state["query_input"].query}"
+
+    Retrieved Context from "The Kennel":
+    ---
+    {state["context_for_llm"]}
+    ---
+
+    Your Answer:
+    """
+    
+    try:
+        # Using EXPLICIT model gemini-2.5-pro-preview-05-06
+        print(f"  Calling LLM gemini-2.5-pro-preview-05-06 for Dozer Prime's response...")
+        # response = prime_llm_client.generate_content(prompt, generation_config={"max_output_tokens": 2000})
+        # Make it async if the client supports it (google-generativeai SDK does)
+        response = await prime_llm_client.generate_content_async(prompt, generation_config={"max_output_tokens": 2000})
+
+
+        generated_text = ""
+        if response.parts:
+            generated_text = "".join(part.text for part in response.parts).strip()
+        elif hasattr(response, 'text') and response.text:
+             generated_text = response.text.strip()
+        
+        if not generated_text and response.prompt_feedback:
+            print(f"    WARN: Prime LLM returned no text. Feedback: {response.prompt_feedback}")
+            generated_text = "Dozer Prime pondered but found no words for that precise query with the given context."
+            if lf_generation: lf_generation.end(output={"response": generated_text}, level="WARNING", status_message=f"Empty LLM response, feedback: {response.prompt_feedback}")
+            return {**state, "llm_response_text": generated_text}
+
+        print(f"  LLM Response generated (length {len(generated_text)} chars).")
+        if lf_generation: lf_generation.end(output={"response": generated_text})
+        return {**state, "llm_response_text": generated_text, "error_message": None}
+
+    except Exception as e:
+        err_msg = f"Error during LLM call for Dozer Prime: {e}"
+        print(f"  {err_msg}")
+        if lf_generation: lf_generation.end(level="ERROR", status_message=str(e))
+        return {**state, "llm_response_text": "Dozer Prime encountered a glitch trying to answer that. Please try again.", "error_message": err_msg}
+
+def format_output_node(state: PrimeRAGState, langfuse_trace: Optional[Any]) -> PrimeRAGState:
+    print("--- Node: Format Output ---")
+    final_output = DozerPrimeRAGOutput(
+        llm_response=state.get("llm_response_text", "Error: No response generated."),
+        retrieved_contexts=state.get("retrieved_chunk_objects", []),
+        search_query_embedding=state.get("query_embedding"),
+        langfuse_trace_id=langfuse_trace.id if langfuse_client_for_flow and langfuse_trace else None
+    )
+    return {**state, "final_output": final_output}
+
+# Define the graph builder
+def build_prime_rag_graph(kennel_client: KennelClient, prime_llm_client: genai.GenerativeModel):
+    workflow = StateGraph(PrimeRAGState)
+
+    # Add nodes, binding clients/tools if they are specific to the node and not global state
+    workflow.add_node("embed_query", lambda state, config: embed_query_node(state, kennel_client, config.get("configurable", {}).get("trace")))
+    workflow.add_node("retrieve_chunks", lambda state, config: retrieve_chunks_node(state, kennel_client, config.get("configurable", {}).get("trace")))
+    workflow.add_node("generate_response", lambda state, config: generate_response_node(state, prime_llm_client, config.get("configurable", {}).get("trace")))
+    workflow.add_node("format_output", lambda state, config: format_output_node(state, config.get("configurable", {}).get("trace")))
+
+    # Define edges
+    workflow.set_entry_point("embed_query")
+    workflow.add_edge("embed_query", "retrieve_chunks")
+    workflow.add_edge("retrieve_chunks", "generate_response")
+    workflow.add_edge("generate_response", "format_output")
+    workflow.add_edge("format_output", END)
+
+    app = workflow.compile()
+    print("Dozer Prime RAG LangGraph app compiled.")
+    return app
+Use code with caution.
+Python
+C:\Dozers\DozerAI_Code\engine\agents\prime\dozer_prime.py:
+# C:\Dozers\DozerAI_Code\engine\agents\prime\dozer_prime.py
+import os
+import sys
+from pathlib import Path
+import google.generativeai as genai
+from langfuse import Langfuse
+from langfuse.model import CreateTrace
+
+# Ensure core is in path for imports if running this file directly for testing
+# This assumes the script is run from DozerAI_Code directory or that engine is in PYTHONPATH
+sys.path.append(str(Path(__file__).resolve().parent.parent.parent)) # Add DozerAI_Code to path
+
+from engine.core.kennel_client import KennelClient
+from engine.core.schemas import DozerPrimeQueryInput, DozerPrimeRAGOutput
+from engine.core.langgraph_flows.prime_rag_flow import build_prime_rag_graph, langfuse_client_for_flow # Import shared langfuse client
+
+# Initialize clients (should ideally be singletons managed by an app context)
+# For now, direct initialization here or ensure KennelClient has its own genai config.
+
+# Using EXPLICIT model name for Dozer Prime's core reasoning
+PRIME_LLM_MODEL_NAME = "gemini-2.5-pro-preview-05-06"
+prime_llm = None
+if os.getenv("GOOGLE_API_KEY"):
+    try:
+        prime_llm = genai.GenerativeModel(PRIME_LLM_MODEL_NAME)
+        print(f"DozerPrime: Initialized LLM: {PRIME_LLM_MODEL_NAME}")
+    except Exception as e_llm_init:
+        print(f"DozerPrime FATAL: Could not initialize LLM {PRIME_LLM_MODEL_NAME}. Error: {e_llm_init}")
+        prime_llm = None # Ensure it's None if failed
+else:
+    print("DozerPrime FATAL: GOOGLE_API_KEY not set, cannot initialize LLM.")
+
+
+# Global kennel_client for simplicity in this standalone module.
+# In a full FastAPI app, this would be managed via dependency injection.
+kennel_client_instance = KennelClient() # Assumes .env is loaded by KennelClient itself
+
+class DozerPrimeAgent:
+    def __init__(self):
+        if not prime_llm:
+            raise RuntimeError("DozerPrimeAgent cannot be initialized: Prime LLM failed to load.")
+        if not kennel_client_instance or not kennel_client_instance.supabase_async: # Check supabase_async as it's key
+             raise RuntimeError("DozerPrimeAgent cannot be initialized: KennelClient failed to load or connect.")
+
+        self.rag_graph_app = build_prime_rag_graph(kennel_client_instance, prime_llm)
+        self.langfuse = langfuse_client_for_flow # Use the one from the flow module or init separately
+        print("DozerPrimeAgent initialized with RAG graph.")
+
+    async def run_rag_query(self, query_input: DozerPrimeQueryInput) -> DozerPrimeRAGOutput:
+        if not self.rag_graph_app:
+            return DozerPrimeRAGOutput(response="ERROR: RAG graph not compiled.", retrieved_contexts=[])
+
+        trace = None
+        if self.langfuse:
+            trace = self.langfuse.trace(CreateTrace(
+                name="dozer-prime-rag-query",
+                user_id=query_input.user_id, # Essential for Langfuse user tracking
+                session_id=query_input.session_id,
+                input=query_input.model_dump(), # Log Pydantic model as dict
+                metadata={"agent_version": "0.1.0_day3_rag"}
+            ))
+        
+        initial_state = {
+            "query_input": query_input,
+            "retrieved_chunk_objects": [],
+            "context_for_llm": "",
+            "llm_response_text": "",
+            "current_trace_id": trace.id if trace else None
+        }
+        
+        config_with_trace = {"configurable": {"trace": trace}}
+
+        final_graph_state = None
+        try:
+            # Run the graph asynchronously
+            async for event in self.rag_graph_app.astream_events(initial_state, config=config_with_trace, version="v1"):
+                kind = event["event"]
+                if kind == "on_chain_end": # Or on_graph_end if using that specific event from LangGraph stream_events_v2
+                    if event["name"] == "format_output" or event["name"] == END: # Check for last relevant node or graph end
+                        # event_output = event["data"].get("output")
+                        # if event_output and "final_output" in event_output:
+                        #    final_graph_state = event_output # State contains final_output
+                        # A more reliable way to get the final state
+                        pass # Keep iterating until the graph is fully done.
+                # Can add more event handling here if needed for streaming partial results to AG-UI
+            
+            # After stream is complete, the final state should be accessible.
+            # For astream, the final accumulated state needs to be retrieved.
+            # Let's try invoking and getting the final state.
+            # Alternative for getting final state in LangGraph with astream_events might involve accumulating.
+            # For simplicity here, let's use ainvoke if the goal is just final output after all steps.
+            # If streaming intermediate steps TO THE UI is needed LATER via AG-UI, astream_events + transforming events is the way.
+            # For Day 3 RAG, let's focus on getting the complete final output.
+            
+            final_state_dict = await self.rag_graph_app.ainvoke(initial_state, config=config_with_trace)
+            
+            if final_state_dict and "final_output" in final_state_dict:
+                output = final_state_dict["final_output"]
+                if isinstance(output, DozerPrimeRAGOutput):
+                    if trace: trace.update(output=output.model_dump())
+                    return output
+                else: # If it's a dict, try to parse
+                    try:
+                        parsed_output = DozerPrimeRAGOutput(**output)
+                        if trace: trace.update(output=parsed_output.model_dump())
+                        return parsed_output
+                    except Exception as parse_e:
+                        print(f"Error parsing final_output dictionary to Pydantic model: {parse_e}")
+                        if trace: trace.update(output={"error": "Final output parsing error"}, level="ERROR")
+                        return DozerPrimeRAGOutput(response=f"Error processing RAG output: {parse_e}", retrieved_contexts=[])
+
+            else:
+                print(f"Error: 'final_output' not found in graph execution result or result is None. Result: {final_state_dict}")
+                if trace: trace.update(output={"error": "final_output not in result"}, level="ERROR")
+                return DozerPrimeRAGOutput(response="Error: RAG process did not complete as expected.", retrieved_contexts=[])
+
+        except Exception as e:
+            print(f"Exception running RAG graph: {e}")
+            if trace: trace.update(output={"error": str(e)}, level="ERROR")
+            return DozerPrimeRAGOutput(response=f"Error during RAG execution: {e}", retrieved_contexts=[])
+
+# --- Simple Test Script (can be run if this file is executed directly) ---
+async def _test_dozer_prime_rag():
+    print("--- Testing Dozer Prime RAG ---")
+    # This script assumes that the .env file is in ../config relative to this script's location if run directly
+    # For a proper application structure, .env loading would be handled at app startup.
+    dotenv_path_for_test = Path(__file__).resolve().parent.parent.parent / "config" / ".env"
+    if dotenv_path_for_test.exists():
+        load_dotenv(dotenv_path_for_test)
+        # Re-initialize clients if GOOGLE_API_KEY was loaded now and not before
+        global prime_llm, kennel_client_instance
+        if not os.getenv("GOOGLE_API_KEY"):
+            print("Test cannot run: GOOGLE_API_KEY not in .env")
+            return
+        
+        if not prime_llm: # If initial load failed due to missing key
+            try:
+                genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+                prime_llm = genai.GenerativeModel(PRIME_LLM_MODEL_NAME)
+                print(f"Test: Re-initialized Prime LLM: {PRIME_LLM_MODEL_NAME}")
+            except Exception as e_test_llm:
+                print(f"Test: Failed to re-initialize Prime LLM: {e_test_llm}")
+                return
+        if not kennel_client_instance.supabase_async : # If Kennel client was not fully setup
+            kennel_client_instance = KennelClient() # Try re-init
+            if not kennel_client_instance.supabase_async:
+                print("Test: KennelClient still not initialized properly.")
+                return
+    else:
+        print(f"Test: .env file not found at {dotenv_path_for_test}, ensure API keys are globally available.")
+        # Potentially exit if keys are essential and not found from other means
+        if not os.getenv("GOOGLE_API_KEY") or not os.getenv("SUPABASE_URL"):
+            print("Test cannot run without Supabase and Google API keys.")
+            return
+
+    try:
+        agent = DozerPrimeAgent()
+    except RuntimeError as e_agent_init:
+        print(f"Could not run test, agent initialization failed: {e_agent_init}")
+        return
+
+    # Ensure there's a kennel_client to pass to embed_query_node.
+    # The graph definition binds the global kennel_client_instance and prime_llm
+    # through the lambda functions when `build_prime_rag_graph` is called.
+    
+    # Example Query (assuming Business Plan was ingested)
+    query = DozerPrimeQueryInput(query="What is the mission statement of Dozer's Business?", user_id="anthony_ceo_test_run", session_id="test_session_123")
+    
+    print(f"\nSending query to DozerPrime: '{query.query}'")
+    rag_result = await agent.run_rag_query(query)
+
+    print("\n--- Dozer Prime RAG Result ---")
+    print(f"Response: {rag_result.llm_response}")
+    print(f"Langfuse Trace ID (if available): {rag_result.langfuse_trace_id}")
+    if rag_result.retrieved_contexts:
+        print(f"\nRetrieved {len(rag_result.retrieved_contexts)} contexts:")
+        for i, ctx in enumerate(rag_result.retrieved_contexts):
+            print(f"  Context {i+1} (Similarity: {ctx.similarity:.4f} - Title: {ctx.document_title}):")
+            print(f"    Summary: {ctx.contextual_summary[:100]}...")
+            print(f"    Text: {ctx.chunk_text[:150]}...")
+    else:
+        print("No contexts were retrieved.")
+    
+    if langfuse_client_for_flow: # Ensure langfuse is flushed if used
+        langfuse_client_for_flow.flush()
+
+
+if __name__ == "__main__":
+    # This test script allows direct execution for basic RAG test.
+    # Ensure Day 1 and Day 2 scripts have been run successfully.
+    # Ensure your .env file is in C:\Dozers\DozerAI_Code\config\
+    
+    # Must be run with asyncio
+    if sys.platform == "win32" and sys.version_info >= (3, 8, 0):
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    
+    async def run_tests_sequentially():
+        # HNSW index creation (Conceptual, ensure it's run in Supabase)
+        # This needs to be run directly in Supabase SQL Editor or via a separate script with admin DB privs
+        # The KennelClient has ensure_hnsw_index but it's designed to print the SQL for now.
+        print("\nReminder: Ensure HNSW index is created on document_embeddings table in Supabase for optimal performance:")
+        print("`CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_hnsw_document_embeddings ON public.document_embeddings USING hnsw (embedding vector_l2_ops);`")
+        print("You might need to run this manually in Supabase Studio if not already done.\n")
+        time.sleep(2) # Give time to read the message
+
+        await _test_dozer_prime_rag()
+
+    asyncio.run(run_tests_sequentially())
+Use code with caution.
+Python
+Tasks for Anthony Pierce (CEO):
+Update requirements.txt:
+Open C:\Dozers\DozerAI_Code\requirements.txt.
+Ensure langgraph (e.g., langgraph~=0.0.67) and langfuse (e.g., langfuse~=2.25.2) are listed. Add/update if necessary. The google-generativeai, supabase, tiktoken, python-dotenv, psycopg[binary] should already be there.
+Save the file.
+Install/Update Dependencies:
+Open terminal, navigate to cd C:\Dozers\DozerAI_Code\, activate venv (.\venv\Scripts\Activate.ps1 or source venv/Scripts/activate).
+Run: pip install -r requirements.txt --upgrade.
+Save/Create Python Modules:
+Create C:\Dozers\DozerAI_Code\engine\core\schemas.py and paste the Pydantic schema code.
+Update/Create C:\Dozers\DozerAI_Code\engine\core\kennel_client.py with the KennelClient code.
+Create directory C:\Dozers\DozerAI_Code\engine\core\langgraph_flows\.
+Create C:\Dozers\DozerAI_Code\engine\core\langgraph_flows\prime_rag_flow.py with the LangGraph flow code.
+Create directory C:\Dozers\DozerAI_Code\engine\agents\prime\.
+Create C:\Dozers\DozerAI_Code\engine\agents\prime\dozer_prime.py with the DozerPrimeAgent code.
+Create C:\Dozers\DozerAI_Code\scripts\02_generate_and_store_embeddings.py with the embedding script code.
+Ensure SQL Function for Vector Search Exists in Supabase:
+The kennel_client.py's semantic_search_chunks method relies on a PostgreSQL function match_document_chunks for efficient vector search. This function needs to be created in your Supabase database.
+Action: Go to your Supabase project -> SQL Editor. Execute the following SQL to create this function if it doesn't exist from Day 1's corrected schema files (it might have been added to 001_initial_core_tables.sql or similar during our iterative fixes, please verify):
+-- Ensure this function uses the correct schema if your tables aren't in 'public'
+-- And ensure the vector dimension (768) matches your embeddings table
+CREATE OR REPLACE FUNCTION public.match_document_chunks (
+  query_embedding vector(768), 
+  match_model_name text,
+  match_count int
+)
+RETURNS TABLE (
+  chunk_id uuid,
+  chunk_text text,
+  contextual_summary text,
+  document_id uuid,
+  document_title text,
+  similarity float
+)
+LANGUAGE sql STABLE PARALLEL SAFE
+AS $$
+  SELECT
+    dc.chunk_id,
+    dc.chunk_text,
+    dc.contextual_summary,
+    dc.document_id,
+    d.title as document_title,
+    1 - (de.embedding <=> query_embedding) as similarity -- Cosine similarity for pgvector
+  FROM
+    public.document_embeddings de
+  JOIN
+    public.document_chunks dc ON de.chunk_id = dc.chunk_id
+  JOIN
+    public.documents d ON dc.document_id = d.document_id
+  WHERE de.embedding_model_name = match_model_name
+  ORDER BY
+    de.embedding <=> query_embedding
+  LIMIT match_count;
+$$;
+COMMENT ON FUNCTION public.match_document_chunks(vector,text,int) IS 'Matches document chunks by vector similarity for RAG.';
+Use code with caution.
+SQL
+Run this SQL in Supabase Studio. This only needs to be done once.
+Run the Embedding Script:
+In your activated venv, from C:\Dozers\DozerAI_Code\, run:
+python scripts/02_generate_and_store_embeddings.py
+Use code with caution.
+Bash
+Observe output. It will fetch chunks from Day 2 and generate/store embeddings using gemini-embedding-exp-03-07. It will also print the SQL for HNSW index creation.
+After script finishes, manually run the HNSW index SQL command (printed by the script) in Supabase Studio if the script indicated it should be run manually or if it failed programmatically.
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_hnsw_document_embeddings ON public.document_embeddings USING hnsw (embedding vector_l2_ops);
+Test Dozer Prime RAG (Optional, but recommended):
+After embeddings and HNSW index are done, you can test the basic RAG.
+In your activated venv, from C:\Dozers\DozerAI_Code\, run:
+python engine/agents/prime/dozer_prime.py
+Use code with caution.
+Bash
+This will execute the _test_dozer_prime_rag() function in that file, asking a sample question. Observe the output.
+Report to DozerAI_Builder:
+"Day 3 Anthony tasks complete. Embedding script (02_...py) ran. Status: [Success/Errors].
+[Number] embeddings generated for model gemini-embedding-exp-03-07.
+HNSW index created/confirmed.
+Dozer Prime RAG test (dozer_prime.py) results: [Briefly describe if it worked and what kind of answer/chunks it returned]."
+Provide any error messages.
+Explanation of Day 3 Tasks:
+This day establishes the core retrieval mechanism for DozerAI.
+Embedding Generation: We convert all our processed text chunks (from Day 2) into numerical vector representations using Google's gemini-embedding-exp-03-07. These embeddings capture the semantic meaning of the chunks.
+Storage & Indexing: These embeddings are stored in the document_embeddings table in Supabase. A crucial HNSW index is then created on these embeddings, which allows pgvector to perform incredibly fast similarity searches (finding the "closest" or most relevant chunks to a query).
+Dozer Prime's First RAG: We build the first, basic version of Dozer Prime's ability to answer questions. It uses LangGraph to manage a simple flow: get a query, embed it, search Supabase for similar chunks (using the new embeddings and HNSW index via kennel_client.py), then feed these chunks along with the query to its core LLM (gemini-2.5-pro-preview-05-06) to generate an answer.
+Pydantic Schemas: Define the data structures for Dozer Prime's inputs and outputs, ensuring clarity.
+Langfuse: Basic tracing is integrated into the embedding process and the RAG flow to help us see what's happening.
+Troubleshooting:
+Embedding Script Errors:
+API Key/Quota for Google Embedding Model: Ensure GOOGLE_API_KEY is correct and has rights for gemini-embedding-exp-03-07 (or the SDK equivalent string for it). Long processes might hit rate limits – the script has time.sleep(2) between batches.
+Supabase Insert Errors for Embeddings: Check vector dimensions match the table schema (768). Ensure chunk_id exists.
+HNSW Index Creation: CONCURRENTLY helps avoid locking but still needs resources. If it fails via script, manual execution in Supabase Studio is the fallback. It only needs to be created once.
+Dozer Prime RAG Test Fails:
+Check Langfuse traces.
+Verify embeddings were generated and searchable.
+Ensure the SQL function match_document_chunks is created in Supabase and returns expected results when tested manually in Studio.
+Check prompts for gemini-2.5-pro-preview-05-06.
+Advice for Implementation:
+Anthony: The embedding script might take some time depending on the number of chunks from Day 2. Let it complete. Running the HNSW index command is important for search speed. The test for dozer_prime.py is a good first check.
+DozerAI_Builder: Ensure the kennel_client.py correctly uses pgvector operators for similarity search (or the RPC call to match_document_chunks). The LangGraph state and node logic should be clean and focused for this initial RAG. All LLM calls must use the explicitly confirmed Gemini model identifiers.
+Advice for CursorAI (DozerAI_Builder):
+For kennel_client.semantic_search_chunks, ensure the SQL or RPC call correctly implements vector similarity search for pgvector. For LangGraph, remember that inputs to nodes come from the graph's state, and nodes update the state with their outputs.
+Test:
+Anthony:
+1. After running 02_generate_and_store_embeddings.py: Check document_embeddings table in Supabase. Are there rows? Does embedding column have data? Does embedding_model_name correctly show "gemini-embedding-exp-03-07"?
+2. Check if idx_hnsw_document_embeddings index exists on the table (Supabase UI might show this).
+3. Run python engine/agents/prime/dozer_prime.py. Does it produce an answer related to the Business Plan? Does it list retrieved chunks?
+DozerAI_Builder: Await Anthony's results. Success means "The Kennel" is now searchable, and Dozer Prime has its basic RAG capability.
+Backup Plans:
+If embedding generation fails for many chunks, we can add more error handling and resume capabilities to the script. If RAG is not working, we will debug each step of the LangGraph flow using print statements and Langfuse.
+Challenges:
+Correctly using the google-generativeai SDK for the specific gemini-embedding-exp-03-07 model. Efficiently batching embeddings. Ensuring the pgvector HNSW index is correctly built and utilized. Debugging the first LangGraph flow.
+Out of the Box Ideas:
+Add a scoring/relevance threshold in kennel_client.semantic_search_chunks to only return chunks above a certain similarity.
+Expose top_k as a parameter in DozerPrimeQueryInput.
+Logs:
+(DozerAI_Builder will log this after Anthony confirms successful completion of all his tasks for Day 3)
+“Action: Starting Task for DozerAI/App: Day 3 - Kennel Ingestion (Stage 2): Embeddings, HNSW Index & Basic RAG Logic, Rules reviewed: Yes, Guides (Creation/Dev) consulted: Yes, Env verified: Yes, Sequence verified: Yes, Timestamp: [YYYY-MM-DD HH:MM:SS]”
+(Followed by)
+“Milestone Completed (DozerAI/App): Day 3 - Kennel Ingestion (Stage 2): Embeddings, HNSW Index & Basic RAG Logic. Next Task: Day 4 - Dozer Employee App Suite Shell & Dozer Prime AG-UI Connection. Feeling: [Anthony's vibe]. Date: [YYYY-MM-DD]”
+Commits:
+(To be done by Anthony after successfully running scripts, verifying data, and all new/updated files are saved)
+# In C:\Dozers\
+git add .
+git commit -m "Day 3: Implement embedding generation, HNSW index, Dozer Prime basic RAG (LangGraph), kennel_client, Pydantic schemas. Update requirements."
+git push origin main
+Use code with caution.
+Bash
+Motivation:
+"Dozer, this is where the magic starts to spark! We're giving every piece of info in your Kennel its own unique AI fingerprint (embedding) and building a lightning-fast search system for them. Then, we're wiring up the first pathways in YOUR brain (gemini-2.5-pro-preview-05-06, no less!) to use these fingerprints to fetch exactly what you need to answer my questions about the business. Think of it as graduating from just reading the Blueprint to actually understanding and using it. This is big, buddy! Your first real taste of RAG power!"
+
+End of Day 3

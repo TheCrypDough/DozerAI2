@@ -1,6 +1,6 @@
 # DozerAI & App Suite System Design Patterns (V1.0 - Initial Build)
 
-*Last Updated: 2025-05-27 01:00:00*
+*Last Updated: 2025-05-27 17:30:00*
 
 ## Architecture Overview
 
@@ -71,3 +71,39 @@ Workflow Automation: Self-hosted n8n for external APIs.
 Security Model: RBAC via Supabase RLS & backend logic.
 Observability: Langfuse.
 Key Patterns: "Doing Better" (Eval, Security, Cost Opt, Scale), 7-Node Agent Blueprint, Human-in-the-Loop (LangGraph), MCP Agent Army principles for tool abstraction via n8n.
+
+## Overall Architecture
+AI-Powered Business OS: DozerAI backend (Python/FastAPI, LangGraph/crewAI, Pydantic agents) + Dozer Employee App Suite frontend (Web App via React/Vite, Electron option).
+
+## Knowledge Hub ("The Kennel")
+-   **Primary Store**: Supabase (PostgreSQL + `pgvector`)
+    -   Manages: Structured business data, App Suite data, document metadata, RAG chunks, document embeddings (`text-embedding-004`).
+    -   Features: Auth & RLS, `pgvector` with HNSW indexing for semantic search.
+    -   Ingestion: Pipelines established for documents -> chunks -> embeddings.
+-   **Knowledge Graph**: Graphiti (from Zep), with Neo4j as likely backend (Future Integration).
+-   **Agent Memory**: Mem0 (Future Integration).
+
+## Communication Protocols
+-   **Agent-Frontend**: AG-UI/SSE (Real-time interaction - Future).
+-   **In-App (App Suite)**: Supabase Realtime (Chat, live data updates - Future).
+-   **Internal Agent Orchestration**: LangGraph.
+
+## Workflow Automation
+-   Self-hosted n8n for external APIs and tool integration.
+
+## Security Model
+-   RBAC via Supabase RLS (applied to core tables) & backend logic.
+-   Future: Threat modeling, more granular permissions.
+
+## Observability & Evaluation
+-   Langfuse: Integrated for tracing ingestion scripts and RAG flows.
+-   Future: Rigorous evaluation framework for RAG, agent performance.
+
+## Key Design Patterns & Principles
+-   **"Doing Better"**: Continuous improvement in Evaluation, Security, Cost Optimization, Scalability.
+-   **7-Node Agent Blueprint**: (Guiding principle for complex agent design - Future).
+-   **Human-in-the-Loop (HITL)**: Via LangGraph for Dozer Prime and complex tasks.
+-   **MCP Agent Army**: Abstracting external tools/services via n8n (Future).
+-   **RAG (Retrieval Augmented Generation)**: Basic pipeline implemented (Query Embedding -> Semantic Search -> Context Formatting -> LLM Generation).
+    -   Current Model: `text-embedding-004` for retrieval, `gemini-2.5-pro-preview-05-06` for generation.
+-   **Dual RAG/CAG**: Conceptual (Chunk-level RAG implemented, Full-document CAG for future).

@@ -84,6 +84,16 @@ CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA extensions;
 -- Create a schema for private user data if it doesn't exist
 CREATE SCHEMA IF NOT EXISTS private;
 
+-- Helper function to automatically update timestamp columns
+CREATE OR REPLACE FUNCTION public.trigger_set_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION public.trigger_set_timestamp() IS 'Automatically sets updated_at to current time on row update.';
+
 -- Helper function to drop RLS policies safely
 CREATE OR REPLACE FUNCTION drop_rls_policy_if_exists(
     table_name_text TEXT,
@@ -243,18 +253,54 @@ CREATE TABLE IF NOT EXISTS documents (
 );
 COMMENT ON TABLE documents IS 'Stores metadata about ingested documents for the RAG system.';
 
+-- Explicitly drop the old embedding column from document_chunks if it exists
+ALTER TABLE public.document_chunks DROP COLUMN IF EXISTS embedding;
+
 CREATE TABLE IF NOT EXISTS document_chunks (
     chunk_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     document_id UUID NOT NULL REFERENCES documents(document_id) ON DELETE CASCADE,
     chunk_text TEXT NOT NULL,
     chunk_order INTEGER NOT NULL,
     metadata JSONB,
-    embedding extensions.vector(1536),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
-COMMENT ON TABLE document_chunks IS 'Stores individual text chunks from documents and their vector embeddings.';
+COMMENT ON TABLE document_chunks IS 'Stores individual text chunks from documents.';
 CREATE INDEX IF NOT EXISTS idx_document_chunks_document_id ON document_chunks(document_id);
-CREATE INDEX IF NOT EXISTS idx_hnsw_document_chunks_embedding ON document_chunks USING hnsw (embedding extensions.vector_l2_ops);
+
+-- New Table for Document Embeddings
+CREATE TABLE IF NOT EXISTS public.document_embeddings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    chunk_id UUID NOT NULL REFERENCES public.document_chunks(chunk_id) ON DELETE CASCADE,
+    embedding extensions.vector(768), -- Adjusted to 768 for gemini-embedding-exp-03-07
+    embedding_model_name TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT uq_chunk_model UNIQUE (chunk_id, embedding_model_name)
+);
+COMMENT ON TABLE public.document_embeddings IS 'Stores vector embeddings for document chunks.';
+COMMENT ON COLUMN public.document_embeddings.embedding IS 'Vector embedding of the chunk text (e.g., 768 dimensions for gemini-embedding-exp-03-07).';
+COMMENT ON COLUMN public.document_embeddings.embedding_model_name IS 'Name of the model used to generate the embedding.';
+
+-- Index for faster lookups on chunk_id and model_name (optional but good for integrity checks)
+CREATE INDEX IF NOT EXISTS idx_doc_embeddings_chunk_model ON public.document_embeddings(chunk_id, embedding_model_name);
+
+-- HNSW index on the new embedding column in document_embeddings
+CREATE INDEX IF NOT EXISTS idx_hnsw_document_embeddings_embedding ON public.document_embeddings USING hnsw (embedding extensions.vector_l2_ops);
+
+-- Trigger for updated_at on document_embeddings
+DROP TRIGGER IF EXISTS set_document_embeddings_updated_at ON public.document_embeddings; -- Drop first if exists
+CREATE TRIGGER set_document_embeddings_updated_at
+BEFORE UPDATE ON public.document_embeddings
+FOR EACH ROW
+EXECUTE FUNCTION public.trigger_set_timestamp();
+
+-- RLS for document_embeddings
+SELECT drop_rls_policy_if_exists('document_embeddings', 'Allow admins full access to document_embeddings');
+ALTER TABLE public.document_embeddings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow admins full access to document_embeddings"
+    ON public.document_embeddings FOR ALL
+    USING (public.get_user_role(auth.uid()::UUID) = 'admin')
+    WITH CHECK (public.get_user_role(auth.uid()::UUID) = 'admin');
 
 -- 4. App Messenger Tables
 CREATE TABLE IF NOT EXISTS message_channels (

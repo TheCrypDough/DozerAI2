@@ -74,3 +74,50 @@ Initial frustration with script errors and repeated attempts to get the schema i
 *   **Total Chunks Ingested:** 1050 (97 for Blueprint, 549 for Dev Chat, 404 for Biz Plan Chat).
 
 ---
+**Task Completed: Day 3 - Embeddings & Basic RAG Structure**
+*   **Timestamp:** 2025-05-27 17:30:00
+*   **Summary of Work:** Successfully generated and stored embeddings for all previously ingested document chunks and established the foundational components for Dozer Prime's basic RAG pipeline. Key achievements include:
+    *   **`requirements.txt` Update:** Added `langgraph` and ensured `langfuse~=2.25.0`.
+    *   **Schema Update (`00_initialize_supabase_schema.py`):** Modified the Day 1 schema script to create a new `document_embeddings` table (with `id`, `chunk_id`, `embedding` (vector 768), `model_name`, `created_at`, `updated_at` with trigger), add an HNSW index on its `embedding` column, and explicitly `DROP COLUMN IF EXISTS embedding` from the `document_chunks` table. Added RLS policies for `document_embeddings`.
+    *   **Embedding Script (`DozerAI_Code/scripts/02_generate_and_store_embeddings.py`):** Developed and executed this script to:
+        *   Fetch all chunk IDs and text from `document_chunks`.
+        *   Generate embeddings using Google's `text-embedding-004` model (768 dimensions) via `genai.embed_content_async`.
+        *   Store these embeddings in the new `document_embeddings` table, linking back to `chunk_id`.
+        *   Successfully processed 1029 existing chunks (some from Day 2 might have been re-processed if script run multiple times during debug, but final count reflects current state).
+        *   Integrated Langfuse tracing for the embedding generation process.
+    *   **Kennel Client (`DozerAI_Code/engine/core/kennel_client.py`):** Created a client class to interact with Supabase. It includes methods for:
+        *   Generating query embeddings using `text-embedding-004`.
+        *   Performing semantic search (vector similarity search) against `document_embeddings` using the `match_document_embeddings` SQL function.
+        *   Retrieving full document text (by joining chunks).
+        *   Langfuse tracing integrated into its methods.
+    *   **Pydantic Schemas (`DozerAI_Code/engine/core/schemas.py`):** Defined data models for RAG inputs (`DozerPrimeQueryInput`), retrieved context (`RetrievedChunkContext`), RAG outputs (`DozerPrimeRAGOutput`), and AG-UI base events (`AGUIBaseEvent`).
+    *   **LangGraph RAG Flow (`DozerAI_Code/engine/core/langgraph_flows/prime_rag_flow.py`):** Built the core RAG graph with nodes for:
+        *   Embedding the input query (`embed_query_node`).
+        *   Retrieving relevant chunks (`retrieve_chunks_node`) using `KennelClient`.
+        *   Formatting retrieved chunks into a context string (`format_context_node`).
+        *   Generating a response using an LLM (`generate_response_node` - using `gemini-2.5-pro-preview-05-06`).
+        *   The graph state (`PrimeRAGState`) manages data flow. Langfuse tracing is included.
+    *   **Dozer Prime Agent (`DozerAI_Code/engine/agents/prime/dozer_prime.py`):** Created `DozerPrimeAgent` class that initializes the LangGraph RAG flow and provides a method to invoke it with user input. Includes a basic `main` block for testing (to be fully utilized in Day 4).
+*   **Key Decisions/Rationale:**
+    *   Switched embedding model from `gemini-embedding-exp-03-07` to `text-embedding-004` due to dimension mismatch with DB schema (768) and API quota/availability issues.
+    *   Explicitly dropped the old `embedding` column from `document_chunks` to avoid confusion and ensure clean schema.
+    *   Adjusted Langfuse SDK usage from `langfuse.model` imports (e.g., `CreateTrace`) to direct keyword argument passing (e.g., `langfuse.trace(name=...)`) due to import errors with version `~2.25.0`.
+    *   Ensured consistent use of `SUPABASE_API_URL` environment variable across scripts.
+    *   Confirmed HNSW index creation on `document_embeddings` for efficient vector search.
+    *   Used `gemini-2.5-pro-preview-05-06` for the generation node in the RAG flow, as per Day 3 guide.
+*   **Testing/Verification Outcome:** 
+    *   `00_initialize_supabase_schema.py` ran successfully, creating the `document_embeddings` table and dropping the old column.
+    *   `02_generate_and_store_embeddings.py` ran successfully, populating `document_embeddings` with 1029 embeddings.
+    *   Conceptual review of `kennel_client.py`, `prime_rag_flow.py`, and `dozer_prime.py` confirmed structural correctness and alignment with Day 3 goals. Langfuse calls are correctly structured.
+*   **Issues Logged/Resolved:** 
+    *   `langfuse` pip install version incompatibility (resolved with `~=2.25.0`).
+    *   `psycopg2` ModuleNotFoundError (resolved by installing `psycopg2-binary`).
+    *   Supabase schema errors related to `document_embeddings` table and old `embedding` column (resolved by schema script updates).
+    *   Langfuse SDK import errors (resolved by changing import/call patterns).
+    *   `.env` variable name mismatch for `SUPABASE_URL` (resolved).
+    *   Google Embedding API issues: model name prefix, dimension mismatch, quota errors (all resolved by model change to `text-embedding-004` and correct naming).
+    *   Conceptual alignment of embedding models across RAG components (resolved).
+*   **Anthony's Feedback/Vibe:** Positive, especially after successful embedding generation and schema correction. Eager to test the RAG pipeline.
+*   **Next Task Context:** Proceeding to Day 4, Task: RAG Pipeline Testing & AG-UI Introduction. This will involve running test queries through `dozer_prime.py` and starting to explore AG-UI for future frontend integration.
+
+---
