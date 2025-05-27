@@ -1,6 +1,6 @@
 # DozerAI & App Suite System Design Patterns (V1.0 - Initial Build)
 
-*Last Updated: 2025-05-26 14:08:05*
+*Last Updated: 2025-05-27 01:00:00*
 
 ## Architecture Overview
 
@@ -63,3 +63,11 @@
 - **Security:** RBAC via Supabase RLS is central. AG-UI communication from a secure backend. n8n webhooks secured. Secrets in `.env`.
 - **Cost Optimization:** Tiered LLM usage (powerful for Prime, cheaper for utility like Contextual Retrieval summary). Langfuse tracks token costs. Efficient RAG/CAG with caching.
 - **Scalability:** Cloud-native DB (Supabase). Dockerized backend services for cloud VPS deployment. Stateless API design where possible.
+
+Overall Architecture: AI-Powered Business OS: DozerAI backend (Python/FastAPI, LangGraph/crewAI, Pydantic agents) + Dozer Employee App Suite frontend (Web App via React/Vite, Electron option).
+Knowledge Hub ("The Kennel"): Supabase (Postgres+pgvector for RAG/CAG with Contextual Retrieval), Graphiti/Neo4j (Knowledge Graph), Mem0 (Agent Memory). Data ingestion pipelines established.
+Communication: AG-UI/SSE for agent-frontend real-time interaction. Supabase Realtime for in-app messenger and live data updates. LangGraph for internal agent orchestration.
+Workflow Automation: Self-hosted n8n for external APIs.
+Security Model: RBAC via Supabase RLS & backend logic.
+Observability: Langfuse.
+Key Patterns: "Doing Better" (Eval, Security, Cost Opt, Scale), 7-Node Agent Blueprint, Human-in-the-Loop (LangGraph), MCP Agent Army principles for tool abstraction via n8n.

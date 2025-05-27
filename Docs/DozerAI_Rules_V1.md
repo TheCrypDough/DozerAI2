@@ -225,62 +225,62 @@ DozerAI's vision is to be the indispensable, omniscient AI co-pilot and comprehe
 *   **Environments**: Test and Prod environments will be cloud-based or on dedicated secure servers. These rules govern DEV.
 
 # Cursor's Memory Bank (DozerAI)
-*Last Updated: 2025-05-26 14:08:05* <!-- Ensure this timestamp is updated with each Auto-Update -->
+*Last Updated: 2025-05-27 01:00:00* <!-- Ensure this timestamp is updated with each Auto-Update -->
 
 ## Memory Bank Structure (DozerAI)
 ```mermaid
 flowchart TD
-  PB["C:\Dozers\Docs\memory_bank\DozerAI_projectbrief.md"] --> PC["C:\Dozers\Docs\memory_bank\DozerAI_productContext.md"]
-  PB --> SP["C:\Dozers\Docs\memory_bank\DozerAI_systemPatterns.md"]
-  PB --> TC["C:\Dozers\Docs\memory_bank\DozerAI_techContext.md"]
+  PB["C:\\Dozers\\Docs\\memory_bank\\DozerAI_projectbrief.md"] --> PC["C:\\Dozers\\Docs\\memory_bank\\DozerAI_productContext.md"]
+  PB --> SP["C:\\Dozers\\Docs\\memory_bank\\DozerAI_systemPatterns.md"]
+  PB --> TC["C:\\Dozers\\Docs\\memory_bank\\DozerAI_techContext.md"]
 
-  PC --> AC["C:\Dozers\Docs\memory_bank\DozerAI_activeContext.md"]
+  PC --> AC["C:\\Dozers\\Docs\\memory_bank\\DozerAI_activeContext.md"]
   SP --> AC
   TC --> AC
 
-  AC --> P["C:\Dozers\Docs\memory_bank\DozerAI_progress.md"]
+  AC --> P["C:\\Dozers\\Docs\\memory_bank\\DozerAI_progress.md"]
 Use code with caution.
 Markdown
-C:\Dozers\Docs\memory_bank\DozerAI_projectbrief.md (Summary)
-Last Updated: 2025-05-26 14:08:05
+C:\\Dozers\\Docs\\memory_bank\\DozerAI_projectbrief.md (Summary)
+Last Updated: 2025-05-27 01:00:00
 Mission: Forge DozerAI & App Suite as the AI operational backbone for "Dozer's Wild & Woof'derful Bar'k & Grrr'ill," empowering CEO (Dozer Prime) & employees ("Pack Members") with hyper-efficient, personalized AI assistance. Aims to automate, provide insights, streamline workflows, and enhance productivity/satisfaction from day zero. Core Goal: Assist in building, running, and expanding Dozer's Business. Includes potential for future marketability of the DozerAI platform.
-MVP (1-Week Target): Assist with "Dozer's Blueprint V8.0" finalization (financials, conceptual visuals via text/prompts, RAG/CAG on Blueprint). Basic App Suite UI (Web App) with AG-UI connection for CEO to interact with Dozer Prime.
-C:\Dozers\Docs\memory_bank\DozerAI_productContext.md (Summary)
-Last Updated: 2025-05-26 14:08:05
+MVP (1-Week Target): Assist with "Dozer's Blueprint V8.0" finalization (financials, conceptual visuals via text/prompts, RAG/CAG on Blueprint). Basic App Suite UI (Web App) with AG-UI connection for CEO to interact with Dozer Prime. Initial ingestion of Blueprint and chat histories into Kennel.
+C:\\Dozers\\Docs\\memory_bank\\DozerAI_productContext.md (Summary)
+Last Updated: 2025-05-27 01:00:00
 Why: Addresses operational complexities of "Dozer's Business." Vision is an AI-integrated business OS ("Your Best Friend in Business").
 Problems Solved: Information silos (via "The Kennel"), inefficiencies (automation), reactive decisions (proactive insights), high labor/training costs (AI augmentation), inconsistent service (protocol adherence via AI & App Suite task sign-offs), communication bottlenecks (integrated messenger in App Suite), limited scalability, employee burden (simplified tasks & HR tools like time clock within App Suite).
 How It Works: Dozer Prime (LangGraph orchestrator) manages sub-agents/crews (Pydantic AI, crewAI). "The Kennel" (Supabase, pgvector with Contextual RAG/CAG, Graphiti/Neo4j KG, Mem0 agent memory) provides knowledge. Integrated Employee App Suite (Web App frontend + Supabase Realtime) for UI, chat, tasks, HR, interacting with backend via AG-UI/SSE. n8n for external tool integration. Langfuse for observability. RBAC security.
 UX Goals: CEO: Empowering, insightful, "hilarious genius" partner. Employees: Supportive, competent, efficient, engaging, "fun" assistant/platform. UI to be "bold simplicity," "intuitive," with "breathable whitespace" and good color/typography, using Lucide Icons & Tailwind CSS.
-C:\Dozers\Docs\memory_bank\DozerAI_activeContext.md (Summary - Initial State)
-Last Updated: 2025-05-26 14:08:05
-Current Work Focus: Day 1 of Phase 0 (Foundational Setup): Supabase Project Setup & "The Kennel" Initial Schema.
-Recent Changes: Project initialized (C:\Dozers\ root, Git repo TheCrypDough/DozerAI2). Core docs finalized with correct paths & AG-UI integration. Comprehensive tech stack confirmed. Vision for integrated Web App Employee App Suite solidified. "Doing Better" principles adopted. Strategic Knowledge Ingestion plan set. 1-Week MVP goal for business plan assistance. Mirrored rules path: C:\Dozers\.cursor\rules\rulesfordozerai.mdc.
-Next Steps: Anthony to populate .env, export chat history. Populate all foundational docs in C:\Dozers\Docs\ & memory_bank\. Commit to GitHub. Draft Day 1 of DozerAI_Development_Guide_V1.md.
-Active Decisions: Supabase for Kennel. Self-hosted n8n. Dual RAG/CAG. Integrated App Suite messenger via Supabase Realtime. AG-UI for Backend-Frontend. React+Vite for frontend initial plan. Urgency for 1-Week MVP.
-C:\Dozers\Docs\memory_bank\DozerAI_systemPatterns.md (Summary)
-Last Updated: 2025-05-26 14:08:05
+C:\\Dozers\\Docs\\memory_bank\\DozerAI_activeContext.md (Summary - Initial State)
+Last Updated: 2025-05-27 01:00:00
+Current Work Focus: Day 2 (Kennel Ingestion MVP) COMPLETED. Awaiting Day 3 tasks.
+Recent Changes: Day 1 (Supabase Schema Init) completed successfully. Day 2 (Document Ingestion Script for Blueprint & Chat Histories) completed: script developed, debugged (Supabase connections, Gemini API model/response handling, .env issues, venv recreation), and successfully run. Documents (Blueprint, 2x Chat Histories) chunked, Blueprint chunks summarized, and all 1050 chunks stored in Supabase. Added `document_title` to `document_chunks` table and backfilled.
+Next Steps: Anthony to provide Day 3 tasks from `DozerAI_Development_Guide_V1.md`.
+Active Decisions: Supabase for Kennel. Self-hosted n8n. Dual RAG/CAG. Integrated App Suite messenger via Supabase Realtime. AG-UI for Backend-Frontend. React+Vite for frontend initial plan. Urgency for 1-Week MVP. Using `gemini-2.5-flash-preview-05-20` for initial summarization.
+C:\\Dozers\\Docs\\memory_bank\\DozerAI_systemPatterns.md (Summary)
+Last Updated: 2025-05-27 01:00:00
 Overall Architecture: AI-Powered Business OS: DozerAI backend (Python/FastAPI, LangGraph/crewAI, Pydantic agents) + Dozer Employee App Suite frontend (Web App via React/Vite, Electron option).
-Knowledge Hub ("The Kennel"): Supabase (Postgres+pgvector for RAG/CAG with Contextual Retrieval), Graphiti/Neo4j (Knowledge Graph), Mem0 (Agent Memory).
+Knowledge Hub ("The Kennel"): Supabase (Postgres+pgvector for RAG/CAG with Contextual Retrieval), Graphiti/Neo4j (Knowledge Graph), Mem0 (Agent Memory). Data ingestion pipelines established.
 Communication: AG-UI/SSE for agent-frontend real-time interaction. Supabase Realtime for in-app messenger and live data updates. LangGraph for internal agent orchestration.
 Workflow Automation: Self-hosted n8n for external APIs.
 Security Model: RBAC via Supabase RLS & backend logic.
 Observability: Langfuse.
 Key Patterns: "Doing Better" (Eval, Security, Cost Opt, Scale), 7-Node Agent Blueprint, Human-in-the-Loop (LangGraph), MCP Agent Army principles for tool abstraction via n8n.
-C:\Dozers\Docs\memory_bank\DozerAI_techContext.md (Summary)
-Last Updated: 2025-05-26 14:08:05
+C:\\Dozers\\Docs\\memory_bank\\DozerAI_techContext.md (Summary)
+Last Updated: 2025-05-27 01:00:00
 Languages: Python (backend), JS/TS (frontend - React+Vite planned).
-Backend Core: FastAPI, LangGraph, crewAI, Pydantic-AI, Mem0.ai. Supabase Client, Neo4j Driver, Langfuse SDK.
+Backend Core: FastAPI, LangGraph, crewAI, Pydantic-AI, Mem0.ai. Supabase Client, Neo4j Driver, Langfuse SDK. Python scripts for data ingestion.
 Frontend Core: React+Vite (planned), AG-UI client logic (Copilot Kit eval / custom EventSource), Supabase JS Client.
-Databases: Supabase (Postgres, pgvector), Neo4j.
-Integrations: n8n (self-hosted Docker). LLMs: Google (Primary - Gemini 2.5 Pro, Flash), OpenAI/Anthropic. ElevenLabs. Crawl4ai.
-Dev Environment: C:\Dozers\. Docker Compose for local services. Git/GitHub. Context7. AG-UI Docs.
-Key Libraries: ag-ui-protocol (Python), @ag-ui/core / @ag-ui/client / @copilotkit/react-core (JS - TBD).
-C:\Dozers\Docs\memory_bank\DozerAI_progress.md (Summary - Initial State)
-Last Updated: 2025-05-26 14:08:05
-Current Status: Project Initialized. All foundational docs finalized & populated. Ready for Day 1: Supabase & Kennel Schema.
-What Works (Conceptual & Setup): Vision for DozerAI & App Suite. Tech stack (incl. AG-UI). RAG/CAG, memory, orchestration strategies. "Doing Better" principles. Project file structure & rules. Git repo active. Knowledge ingestion plan set.
-What's Left (All Implementation): All development for DozerAI engine & App Suite. Kennel population (Blueprint, chats, codes, etc.). Agent logic (LangGraph/crewAI flows, AG-UI event emission). Mem0/Graphiti integration. App Suite UI/UX (React+Vite, AG-UI consumption). n8n workflows. Langfuse setup. ElevenLabs. Testing, security, deployment.
-Known Issues (Anticipated): 1-Week MVP pressure. LLM cost/latency. Integration complexity (especially AG-UI with backend agent states). Data security. Realtime scaling. n8n/Neo4j maintenance.
+Databases: Supabase (Postgres, pgvector), Neo4j. Initial schema and document/chunk tables populated.
+Integrations: n8n (self-hosted Docker). LLMs: Google (Primary - Gemini 2.5 Pro for Prime, `gemini-2.5-flash-preview-05-20` for summarization tasks), OpenAI/Anthropic. ElevenLabs. Crawl4ai.
+Dev Environment: C:\\Dozers\\. Docker Compose for local services. Git/GitHub. Context7. AG-UI Docs. Python venv for script execution.
+Key Libraries: ag-ui-protocol (Python), @ag-ui/core / @ag-ui/client / @copilotkit/react-core (JS - TBD), `google-generativeai`, `supabase`, `python-dotenv`, `langchain-text-splitters`, `tiktoken`.
+C:\\Dozers\\Docs\\memory_bank\\DozerAI_progress.md (Summary - Initial State)
+Last Updated: 2025-05-27 01:00:00
+Current Status: Day 2 Kennel Ingestion MVP complete. Foundational documents (Blueprint, Dev Chat, Biz Plan Chat) parsed, chunked, summarized (Blueprint only), and stored in Supabase.
+What Works (Conceptual & Setup): Vision for DozerAI & App Suite. Tech stack (incl. AG-UI). RAG/CAG, memory, orchestration strategies. "Doing Better" principles. Project file structure & rules. Git repo active. Knowledge ingestion plan set. Supabase schema initialized. Ingestion script for core documents is functional.
+What's Left (All Implementation): All development for DozerAI engine & App Suite beyond initial data load. Kennel population (further docs, codes, etc.). Agent logic (LangGraph/crewAI flows, AG-UI event emission). Mem0/Graphiti integration. App Suite UI/UX (React+Vite, AG-UI consumption). n8n workflows. Langfuse setup. ElevenLabs. Testing, security, deployment for all components.
+Known Issues (Anticipated/Resolved): 1-Week MVP pressure. LLM cost/latency (mitigated for Blueprint summaries by using Flash model, but needs ongoing monitoring). Integration complexity (especially AG-UI with backend agent states). Data security. Realtime scaling. n8n/Neo4j maintenance. Initial venv disappearance resolved.
 (End of populated Memory Bank summaries within Rules file)
 Development Workflow (DozerAI & App Suite)
 Guide Driven: Follow C:\Dozers\Docs\DozerAI_Development_Guide_V1.md. Use C:\Dozers\Docs\tasks.md for sequencing.
@@ -305,10 +305,12 @@ Commit Workflow Message: "Completed (DozerAI/App): [Task Name from tasks.md]. Ne
 Tool Usage (MCPs for DozerAI)
 Available: GitHub, Browser, Perplexity API, Web Research, sequentialthinking, puppeteer, Docker, PostgreSQL client, Supabase CLI, n8n CLI/UI, Neo4j Browser/Cypher Shell, Context7, AG-UI Documentation.
 Usage: Leverage proactively. Announce usage.
-Current Task (DozerAI_Builder Updates This Automatically After Approval)
-Task: Day 2 - Kennel Ingestion MVP: "Dozer's Blueprint V8.0" & Our Sacred Scrolls (Dev Chat History) with Contextual Retrieval Pipeline (Stage 1: Parsing, Chunking, Context Gen) - Subtask: Update requirements.txt Content
+
+## Current Task (DozerAI_Builder Updates This Automatically After Approval)
+Task: Awaiting Day 3 Tasks from Anthony
 Status: TODO
-Details: Follow detailed steps in C:\Dozers\Docs\DozerAI_Development_Guide_V1.md Day 2, specifically for updating requirements.txt.
+Details: Placeholder until Anthony provides the tasks for Day 3 from DozerAI_Development_Guide_V1.md.
+
 Daily Context Log Reference (DozerAI)
 File: C:\Dozers\Docs\daily_progress\daily_context_log.md
 Purpose: Tracks DozerAI/App daily achievements, issues, next steps, suggestions, Anthony's vibe.

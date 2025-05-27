@@ -1,6 +1,6 @@
 # DozerAI & App Suite Technical Context (V1.0 - Initial Build)
 
-*Last Updated: 2025-05-26 14:08:05*
+*Last Updated: 2025-05-27 01:00:00*
 
 ## Core Technologies
 
@@ -94,3 +94,11 @@
 - **Integration Complexity:** High number of advanced components requires meticulous design of interfaces (Pydantic, AG-UI events) and robust error handling.
 - **Self-Hosted n8n/Neo4j Maintenance:** Requires ongoing updates and resource management (especially if deployed to a budget VPS).
 - **1-Week MVP Urgency:** Requires ruthless prioritization and focus on core deliverables for business plan assistance.
+
+## Languages: Python (backend), JS/TS (frontend - React+Vite planned).
+## Backend Core: FastAPI, LangGraph, crewAI, Pydantic-AI, Mem0.ai. Supabase Client, Neo4j Driver, Langfuse SDK. Python scripts for data ingestion.
+## Frontend Core: React+Vite (planned), AG-UI client logic (Copilot Kit eval / custom EventSource), Supabase JS Client.
+## Databases: Supabase (Postgres, pgvector), Neo4j. Initial schema and document/chunk tables populated.
+## Integrations: n8n (self-hosted Docker). LLMs: Google (Primary - Gemini 2.5 Pro for Prime, `gemini-2.5-flash-preview-05-20` for summarization tasks), OpenAI/Anthropic. ElevenLabs. Crawl4ai.
+## Dev Environment: C:\\Dozers\\. Docker Compose for local services. Git/GitHub. Context7. AG-UI Docs. Python venv for script execution.
+## Key Libraries: ag-ui-protocol (Python), @ag-ui/core / @ag-ui/client / @copilotkit/react-core (JS - TBD), `google-generativeai`, `supabase`, `python-dotenv`, `langchain-text-splitters`, `tiktoken`.

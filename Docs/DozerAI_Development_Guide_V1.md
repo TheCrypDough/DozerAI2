@@ -926,113 +926,149 @@ We can now consider the primary goal of Day 1 ("Supabase Project Setup & 'The Ke
 End Day 1
 
 
-**Day 2 - Kennel Ingestion MVP: "Dozer's Blueprint V8.0" & Our Sacred Scrolls (Dev Chat History) with Contextual Retrieval Pipeline (Stage 1: Parsing, Chunking, Context Gen)**
+**Day 2 - Kennel Ingestion (Stage 1): Intelligent Chunking & Strategic Contextual Summaries for Blueprint & Chats**
 
 **Anthony's Vision (for this DozerAI/App Feature):**
-"Alright, DozerAI_Builder, 'The Kennel' has its shelves built! Now, it's time to start stocking them with the most critical knowledge. We need to get 'Dozer's Blueprint V8.0' and all our development chat history into a state where DozerAI can actually *understand* it. This means breaking them down smartly and, as we discussed from Cole Medina's insights, adding that crucial 'Contextual Retrieval' summary to each piece so DozerAI isn't just getting snippets but *understands their place in the bigger picture*. For today, let's focus on getting the documents read, intelligently chunked (especially the Markdown Blueprint), and generating those contextual summaries for each chunk. Tomorrow, we'll embed them."
+"Now that 'The Kennel's' structure is solid, let's get the foundational knowledge in – the full 'Dozer's Blueprint V8.0' and our development chat histories. I need this done *smartly*. The Blueprint needs to be broken down by its actual sections to keep ideas together. For the chats, let's avoid that crazy tiny-chunk-summary mess; group them into bigger, more useful pieces. Contextual summaries are great for the Blueprint sections, but let's be strategic and skip them for the raw chat chunks for now to save time and cost. This first pass of ingestion needs to be efficient and lay a high-quality groundwork for DozerAI's understanding."
 
 **Description:**
-Day 2 focuses on the first stage of ingesting our two primary foundational documents – "Dozer's Blueprint V8.0" (business plan) and our `DozerAI_Dev_Chat_History.txt` – into "The Kennel." This involves:
-1.  Creating a Python script (`01_ingest_and_contextualize_docs.py`) that can read these source documents.
-2.  Implementing intelligent chunking strategies:
-    *   For the Markdown-formatted "Dozer's Blueprint V8.0," we will use a header-aware chunking strategy to maintain semantic coherence.
-    *   For the plain text `DozerAI_Dev_Chat_History.txt`, we will use a suitable text splitter (e.g., recursive character with overlap).
-3.  For each generated chunk from both documents, the script will then use a cost-effective LLM (like Google's Gemini Flash or a smaller OpenAI/Anthropic model via OpenRouter if preferred) to generate a "contextual summary" as per the Anthropic Contextual Retrieval method. This summary situates the chunk within its parent document.
-4.  The script will store the original document metadata, the generated chunks, and their corresponding contextual summaries in the `documents` and `document_chunks` tables in our Supabase database (created on Day 1). The actual vector embedding will happen on Day 3.
+Day 2 initiates Stage 1 of populating "The Kennel" by processing "Dozer's Blueprint V8.0" and the development chat histories (`DozerAI_Dev_Chat_HistoryV1.txt`, `Business_Plan_Chat_HistoryV1.txt`). This involves:
+1.  A Python script (`01_ingest_and_contextualize_docs.py`) will read these source documents from their confirmed location: `C:\Dozers\Docs\Planning Docs\`.
+2.  **Intelligent Chunking:**
+    *   **"Dozer's Blueprint V8.0" (Markdown):** Will be chunked using `langchain_text_splitters.MarkdownHeaderTextSplitter` configured to recognize up to H4 headers (`#`, `##`, `###`, `####`). If any resulting semantic chunk still exceeds a defined length (e.g., ~4000 characters), it will be further subdivided by `RecursiveCharacterTextSplitter` while preserving header metadata.
+    *   **Chat Histories (Plain Text):** Will be chunked using `langchain_text_splitters.RecursiveCharacterTextSplitter` with a larger chunk size (e.g., 4000-6000 characters) and appropriate separators to capture more complete conversational segments.
+3.  **Strategic Contextual Summary Generation (Anthropic Contextual Retrieval Method):**
+    *   For each **final chunk derived from the Business Plan**, the script will use Google's `gemini-1.5-flash-latest` LLM to generate a concise contextual summary explaining the chunk's role within the overall Blueprint.
+    *   For chunks derived from **chat histories**, this LLM-based contextual summary generation step will be **skipped** for this initial ingestion to optimize for speed and cost. The `contextual_summary` field for these chunks will be `NULL` or an empty string.
+4.  The script will store original document metadata (including a content hash to prevent re-processing unchanged files) in the `documents` table and then store each processed chunk (with its text, sequence, associated contextual summary if generated, and metadata) in the `document_chunks` table in Supabase. Vector embedding of these chunks is deferred to Day 3.
 
 **Relevant Context (for DozerAI/App Suite):**
-*Technical Analysis:* This stage is critical for populating "The Kennel" with high-quality, context-rich data for DozerAI's RAG/CAG system. The script will use Python libraries for file reading (`pathlib`), text processing, and Markdown parsing (e.g., `mistune` or `markdown-it-py` for robust Markdown parsing to identify headers for chunking). LLM calls for contextual summary generation will be made via their respective Python SDKs (e.g., `google-generativeai`), configured using API keys from the `.env` file. Results (document metadata, chunks, contextual summaries) will be inserted into Supabase using the `supabase-py` client, targeting the `documents` and `document_chunks` tables. Error handling and logging (to console and potentially a file log) will be included.
-*Layman’s Terms:* We're taking our two most important books – the main Business Plan for "Dozer's" and the diary of how we're building DozerAI – and preparing them for DozerAI's brain. First, we'll chop these books into sensible paragraphs or sections ("chunks"). For the Business Plan, which has nice headings, we'll be smart and try to keep related ideas under one heading together in a chunk. Then, for *every single chunk*, we'll ask a quick, cheap AI helper to write a tiny note (a "contextual summary") explaining what that chunk is about and where it fits in the whole book. We'll then file away the original document info, all these chunks, and their little summary notes into "The Kennel" (our Supabase database). Tomorrow, we'll make the "smart index cards" (embeddings) for them.
+*Technical Analysis:* The Python script (`01_ingest_and_contextualize_docs.py`) will use `pathlib` for file access, `markdown-it-py` (if direct parsing is needed beyond `MarkdownHeaderTextSplitter`'s capabilities, though the splitter itself should suffice) and `langchain-text-splitters` for advanced chunking. The `google-generativeai` SDK will make calls to Gemini Flash for contextual summaries (for Blueprint chunks only). The `supabase-py` client will handle all database interactions, inserting records into `documents` and `document_chunks`. The script will include logic to check for existing documents via their `source_uri` and `content_hash` to avoid redundant processing and allow for updates if source files change. Error handling and detailed console logging are essential.
+*Layman’s Terms:* We're taking the Business Plan and our chat diaries and carefully preparing them for DozerAI's brain.
+    For the Business Plan: We'll slice it up following its main sections and sub-sections. If a section is still too huge, we'll chop that big piece a bit more. Then, for each of these sensible pieces, we'll ask a quick AI helper to write a tiny note explaining what that piece is about in the grand scheme of the whole plan.
+    For our Chat Diaries: We'll cut these into bigger, more readable conversation segments. We'll skip asking the AI helper to write notes for every little piece of chat for now – too many notes, too much time!
+    Finally, all this neatly prepared information (original document details, the prepared pieces, and the special notes for the Business Plan pieces) gets filed away in "The Kennel" (Supabase database).
 
 **DozerAI_Builder's Thought Input:**
-Implementing header-aware Markdown chunking and the Anthropic Contextual Retrieval method from the start is a best practice that will significantly enhance the quality of our RAG system. Using a cost-effective LLM for summary generation is key. Storing chunks and summaries now, before embedding, allows for easier review and potential reprocessing if needed. The `01_ingest_and_contextualize_docs.py` script will be a cornerstone of "The Kennel's" data pipeline.
+This refined approach to chunking and selective contextual summarization is critical for both RAG quality and operational efficiency. Header-aware chunking for the Blueprint, combined with a fallback for oversized sections, ensures semantic integrity. Skipping per-chunk LLM summaries for voluminous chat logs during this initial bulk load is a pragmatic choice that saves significant time and API costs, while still getting the raw text into the database for basic RAG. The hash-based check for existing documents is a good first step towards an idempotent ingestion process.
 
 **Anthony's Thought Input (for DozerAI/App Development):**
-"This sounds like exactly what we need. I want DozerAI to *really get* the Blueprint and our conversations, not just spit back random sentences. If adding these 'contextual summaries' to each piece makes the AI smarter, then that's the way to go. I'm ready to see this script in action and start feeding Dozer's brain with the good stuff!"
+"This makes much more sense. Treat the Blueprint with kid gloves – those section-based chunks with extra AI summaries sound perfect. For the chats, just get the text in cleanly for now; we can always get fancier later if we need to. The 'don't re-process if it hasn't changed' idea is smart too. I need to see this script handle my actual Blueprint and get those chunks into Supabase looking good."
 
 **Additional Files, Documentation, Tools, Programs Needed (for DozerAI/App):**
--   `01_ingest_and_contextualize_docs.py`: (Python Script), (Parses, chunks, generates contextual summaries), (Core of Day 2), (To be created in `C:\Dozers\DozerAI_Code\scripts\`).
--   Python Libraries: (To be added to `C:\Dozers\DozerAI_Code\requirements.txt`)
-    *   `google-generativeai` (for Gemini models for context generation)
-    *   `mistune` or `markdown-it-py` (for Markdown parsing - let's choose `markdown-it-py` for its extensibility)
-    *   `langchain-text-splitters` (for general text splitting, has good recursive character splitter and now Markdown header splitter)
-    *   `tiktoken` (for token counting to manage LLM input for summaries, often an OpenAI SDK dependency but useful standalone)
--   `C:\Dozers\Docs\Business_Plan_Dozer_V8.md`: (Source Document)
--   `C:\Dozers\Docs\DozerAI_Dev_Chat_History.txt`: (Source Document)
--   Supabase Project: (Cloud Database), (Target for storing processed data), (Already set up).
--   `.env` file: (Located at `C:\Dozers\DozerAI_Code\config\.env`), (Must contain `GOOGLE_API_KEY` and Supabase credentials).
+-   `01_ingest_and_contextualize_docs.py`: (Python Script), (Parses, intelligently chunks, selectively generates contextual summaries, stores in Supabase), (Core of Day 2), (Located at `C:\Dozers\DozerAI_Code\scripts\`).
+-   Updated `C:\Dozers\DozerAI_Code\requirements.txt`: (File), (To include `google-generativeai`, `markdown-it-py`, `langchain-text-splitters`, `tiktoken`).
+-   Source Documents:
+    *   `C:\Dozers\Docs\Planning Docs\Business_Plan_Dozer_V8.md`
+    *   `C:\Dozers\Docs\Planning Docs\DozerAI_Dev_Chat_HistoryV1.txt`
+    *   `C:\Dozers\Docs\Planning Docs\Business_Plan_Chat_HistoryV1.txt`
+-   Supabase Project: (Cloud Database), (Target for storing processed data), (Schema created on Day 1).
+-   `C:\Dozers\DozerAI_Code\config\.env` file: (Must contain `GOOGLE_API_KEY` and Supabase credentials: `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`).
 
 **Any Additional Updates Needed to the Project (DozerAI/App) Due to This Implementation?**
--   `C:\Dozers\DozerAI_Code\requirements.txt` will be updated with new Python libraries.
--   The `documents` and `document_chunks` tables in Supabase will be populated.
+-   `C:\Dozers\DozerAI_Code\requirements.txt` updated.
+-   `documents` and `document_chunks` tables in Supabase populated.
+-   `.gitignore` needs to ensure `C:\Dozers\Docs\Planning Docs\` is ignored.
 
-**DozerAI/App Project/File Structure Update Needed:** No new directories, just the new Python script and updated `requirements.txt`.
+**DozerAI/App Project/File Structure Update Needed:** No new directories, just the Python script and updated `requirements.txt`.
 
 **Any Additional Updates Needed to the DozerAI Guide for Changes or Explanation?**
--   No, this entry details the plan.
+-   No, this entry details the refined plan.
 
 **Any Removals from the DozerAI Guide Needed?**
--   None.
+-   Any previous, less efficient Day 2 ingestion plans.
 
 **Effect on DozerAI/App Project Timeline:**
--   No change; this is Day 2 as planned.
+-   This more intelligent approach might take slightly longer for DozerAI_Builder to script perfectly, but the actual execution time by Anthony (and API costs) will be significantly reduced and the quality of ingested data for the Blueprint will be higher. Overall, an efficiency gain.
 
 **Integration Plan (for DozerAI/App):**
--   **When:** Day 2 (Week 1) – Core data ingestion pipeline (Stage 1).
--   **Where:** Python script running locally, interacting with Supabase Cloud.
--   **Dependencies (Software):** Python environment from Day 1, activated.
--   **Setup Instructions (Summary):** Anthony updates `requirements.txt`, installs new packages. DozerAI_Builder provides the script. Anthony runs the script.
+-   **When:** Day 2 (Week 1) – Core data ingestion pipeline (Stage 1: Parsing, Chunking, Selective Contextual Summaries).
+-   **Where:** Python script running locally from `C:\Dozers\DozerAI_Code\scripts\`, interacting with Supabase Cloud.
+-   **Dependencies (Software):** Activated Python virtual environment from Day 1 with updated packages.
+-   **Setup Instructions (Summary):** Anthony updates `requirements.txt`, installs new packages. DozerAI_Builder provides the script. Anthony verifies `.env` and source doc paths, then runs the script.
 
 **Recommended Tools (for DozerAI/App):**
 -   Python, VS Code (or preferred IDE).
--   Supabase Studio (to verify data insertion).
+-   Supabase Studio (to verify data insertion into `documents` and `document_chunks`).
 -   Terminal (PowerShell or Git Bash).
 
 ---
 **Tasks for DozerAI_Builder (CursorAI):**
 
 1.  **Update `requirements.txt` Content:**
-    *   Provide the updated content for `C:\Dozers\DozerAI_Code\requirements.txt`, adding `google-generativeai`, `markdown-it-py`, `langchain-text-splitters`, and `tiktoken`.
+    *   Provide the *complete* updated content for `C:\Dozers\DozerAI_Code\requirements.txt`, ensuring it includes `python-dotenv`, `supabase`, `fastapi`, `uvicorn`, `pydantic`, `langfuse` (from Day 1 context, though not all used today) AND the new Day 2 libraries: `google-generativeai`, `markdown-it-py`, `langchain-text-splitters`, and `tiktoken`. Ensure versions are reasonably current and compatible.
 2.  **Develop Python Script (`01_ingest_and_contextualize_docs.py`):**
     *   Create the complete Python script to be saved as `C:\Dozers\DozerAI_Code\scripts\01_ingest_and_contextualize_docs.py`.
-    *   **Script Functionality:**
-        *   Load Supabase and Google API credentials from `C:\Dozers\DozerAI_Code\config\.env`.
-        *   Initialize Supabase client (`supabase-py`).
-        *   Initialize Google Generative AI client (for Gemini Flash or a similar cost-effective model for summaries).
-        *   Define file paths for `Business_Plan_Dozer_V8.md` and `DozerAI_Dev_Chat_History.txt`.
-        *   **Function to process Markdown (`Business_Plan_Dozer_V8.md`):**
-            *   Read the file.
-            *   Use `langchain_text_splitters.MarkdownHeaderTextSplitter` to chunk based on headers (e.g., H1, H2, H3). Define appropriate headers to split by.
-            *   For each chunk, generate a contextual summary using the chosen Google LLM. The prompt should include the full document text (or a very large surrounding window if the full doc exceeds LLM context for this *summary generation step*) and the current chunk, asking for a ~50-100 token summary of the chunk's role and context within the document.
-            *   Store document metadata (source_uri, type="BUSINESS_PLAN", title, hash) in Supabase `documents` table (if not exists, based on hash). Get `document_id`.
-            *   Store each chunk text and its `contextual_summary` in Supabase `document_chunks` table, linked to the `document_id`.
-        *   **Function to process Plain Text (`DozerAI_Dev_Chat_History.txt`):**
-            *   Read the file.
-            *   Use `langchain_text_splitters.RecursiveCharacterTextSplitter` (e.g., chunk size 1000-1500, overlap 100-200).
-            *   For each chunk, generate a contextual summary using the Google LLM (similar prompt, providing the full chat history or a large window as context).
-            *   Store document metadata (source_uri, type="CHAT_HISTORY", title, hash) in Supabase `documents` table. Get `document_id`.
-            *   Store each chunk text and its `contextual_summary` in Supabase `document_chunks` table.
-        *   Include robust error handling for file operations, API calls, and database insertions.
-        *   Print clear progress messages (e.g., "Processing Business_Plan_Dozer_V8.md...", "Chunking complete, X chunks created.", "Generating contextual summaries (this may take a while)...", "Storing chunks in Supabase...").
-        *   At the end, print a summary: "Successfully processed X documents, creating Y chunks with contextual summaries, and stored them in Supabase."
-3.  **Log Start in `rules_check.log`:**
+    *   **Script Functionality Details:**
+        *   Load Supabase credentials (URL, Service Key) and Google API Key from `C:\Dozers\DozerAI_Code\config\.env`.
+        *   Initialize `supabase-py` client and `google-generativeai` client (using `gemini-1.5-flash-latest` for summaries).
+        *   Define the list of documents to process, using the corrected paths in `C:\Dozers\Docs\Planning Docs\` and correct filenames.
+        *   Implement `generate_content_hash(content: str) -> str`.
+        *   Implement `get_contextual_summary(full_document_text_window: str, chunk_text: str, doc_title: str, llm_client) -> str`:
+            *   Takes a significant window of the document (e.g., up to 500k-800k chars of the full doc for context, to manage summary LLM input size) and the specific chunk.
+            *   Uses the `gemini-1.5-flash-latest` model.
+            *   Includes the carefully crafted prompt from Day 2's description to generate a ~50-100 word summary.
+            *   Includes error handling for LLM calls and `time.sleep(1)` between calls.
+        *   Implement `process_and_store_document` function:
+            *   Accepts file path, `source_uri`, `document_type`, `title`, and `chunking_strategy` (`markdown_header` or `recursive_char_large`).
+            *   Reads file content. Calculates content hash.
+            *   Checks Supabase `documents` table for existing `source_uri`.
+                *   If exists and `content_hash` matches, print "Document [title] up-to-date. Skipping." and return.
+                *   If exists and `content_hash` differs (or no hash), update `full_text_content`, `content_hash`, `last_updated_at` in `documents` table. Then, **delete existing chunks associated with this `document_id` from `document_chunks` table** to ensure clean re-processing.
+                *   If not exists, insert new record into `documents` table (including `full_text_content`).
+            *   If `chunking_strategy == "markdown_header"`:
+                *   Use `MarkdownHeaderTextSplitter` with `headers_to_split_on = [("#", "H1"), ("##", "H2"), ("###", "H3"), ("####", "H4")]` and `strip_headers=False`.
+                *   Iterate through these semantic chunks. If a chunk > 4000 chars, use `RecursiveCharacterTextSplitter` (chunk_size ~2000, overlap ~200) on *that specific chunk*, carrying over its header metadata.
+                *   For each final (potentially sub-divided) Blueprint chunk, call `get_contextual_summary`.
+            *   If `chunking_strategy == "recursive_char_large"` (for chat logs):
+                *   Use `RecursiveCharacterTextSplitter` (chunk_size ~5000, overlap ~300, separators like `\n\n` and standard ones).
+                *   **DO NOT** call `get_contextual_summary`. Set summary to `None` or empty string.
+            *   Batch insert processed chunks (with `document_id`, `chunk_text`, `chunk_sequence`, `contextual_summary` (if any), metadata) into `document_chunks`. Use batches of e.g., 50-100 chunks for Supabase insert.
+        *   Main part of script iterates through `documents_to_process` list and calls `process_and_store_document`.
+        *   Include comprehensive print statements for progress and error logging.
+3.  **Update `.gitignore` (Instruction for Anthony):**
+    *   Remind Anthony to ensure `Docs/Planning Docs/` and `logs/` (referring to `C:\Dozers\logs\`) are added to `C:\Dozers\.gitignore` if not already perfectly covered by existing patterns.
+4.  **Log Start in `rules_check.log`:**
     *   Mentally prepare log entry.
-4.  **Instruct Anthony for His Tasks:**
-    *   Provide clear instructions for Anthony to save the updated `requirements.txt`, save the new Python script, install new dependencies, and run the script.
+5.  **Instruct Anthony for His Tasks:**
+    *   Provide clear instructions for Anthony to save the updated `requirements.txt`, save the new Python script, install new dependencies, verify `.gitignore`, and run the script.
 
 ---
-**Code for `requirements.txt` (to be saved as `C:\Dozers\DozerAI_Code\requirements.txt` - *APPEND* these to existing):**
+**Code for `requirements.txt` (to be saved/updated by Anthony at `C:\Dozers\DozerAI_Code\requirements.txt`):**
 ```text
-# APPEND these to your existing requirements.txt from Day 1
+# C:\Dozers\DozerAI_Code\requirements.txt
 
+# For loading .env files
+python-dotenv~=1.0.1
+
+# Core Supabase client for Python
+supabase~=2.4.2
+
+# For FastAPI backend (future days)
+fastapi~=0.111.0
+uvicorn[standard]~=0.29.0
+
+# For Pydantic (data validation, used by FastAPI and agents)
+pydantic~=2.7.1
+
+# For Langfuse observability (future days)
+langfuse~=2.25.2
+
+# For direct PostgreSQL interaction (used by Day 1 script)
+psycopg[binary]~=3.1.18 # For psycopg3
+
+# --- Added for Day 2 ---
 # For Google Generative AI (Gemini models)
-google-generativeai~=0.5.0 # Check for latest stable
+google-generativeai~=0.5.4 # Check for latest stable
 
 # For Markdown parsing and text splitting
+# markdown-it-py for robust Markdown parsing, can be used by custom splitters if needed
+# langchain-text-splitters for pre-built advanced splitters
 markdown-it-py~=3.0.0
-langchain-text-splitters~=0.2.0 # Or latest compatible with langchain_core if used
+langchain-text-splitters~=0.2.1 # Or latest compatible
+langchain-core~=0.2.5 # Often a peer dependency for langchain_text_splitters
 
-# For token counting (often a dependency, but good to have explicitly)
+# For token counting (often an OpenAI SDK dependency, but good standalone for estimations)
 tiktoken~=0.7.0
 Use code with caution.
 Markdown
@@ -1047,22 +1083,32 @@ from pathlib import Path
 from supabase import create_client, Client
 import google.generativeai as genai
 from langchain_text_splitters import RecursiveCharacterTextSplitter, MarkdownHeaderTextSplitter
+import tiktoken # For estimating token counts for summary generation context
 
 # --- Configuration & Clients ---
-# Load environment variables from .env file in the config directory
-# Script is in DozerAI_Code/scripts/, .env is in DozerAI_Code/config/
-BASE_DIR = Path(__file__).resolve().parent.parent # Resolves to DozerAI_Code
+print("Script: Initializing configuration and clients...")
+BASE_DIR = Path(__file__).resolve().parent.parent
 CONFIG_DIR = BASE_DIR / "config"
-DOCS_DIR_HOST_OS = Path("C:/Dozers/Docs") # Path on Anthony's machine
+# Path to the 'Planning Docs' directory on Anthony's host machine
+# This needs to be an absolute path that the script can access.
+# Assuming the script is run from DozerAI_Code, and Docs is parallel to it at Dozers\Docs
+HOST_PROJECT_ROOT = BASE_DIR.parent # This should be C:\Dozers
+PLANNING_DOCS_DIR_HOST_OS = HOST_PROJECT_ROOT / "Docs" / "Planning Docs"
 
+if not os.path.exists(CONFIG_DIR / ".env"):
+    print(f"CRITICAL ERROR: .env file not found at {CONFIG_DIR / '.env'}")
+    sys.exit(1)
 load_dotenv(CONFIG_DIR / ".env")
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
-if not all([SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GOOGLE_API_KEY]):
-    print("ERROR: Supabase or Google API Key missing in .env. Please check C:\\Dozers\\DozerAI_Code\\config\\.env")
+if not all([SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GOOGLE_API_KEY]) or \
+   "YOUR_SUPABASE" in SUPABASE_URL or \
+   "YOUR_GOOGLE" in GOOGLE_API_KEY:
+    print("ERROR: Supabase URL/Service Key or Google API Key missing/placeholders in .env.")
+    print(f"Please check C:\\Dozers\\DozerAI_Code\\config\\.env")
     sys.exit(1)
 
 try:
@@ -1074,236 +1120,358 @@ except Exception as e:
 
 try:
     genai.configure(api_key=GOOGLE_API_KEY)
-    # Using a cost-effective model for summary generation
-    # Ensure you have access to this model or choose an alternative like "gemini-1.0-pro" if flash is not available
-    context_gen_model = genai.GenerativeModel('gemini-1.5-flash-latest') 
-    print(f"Google Generative AI client initialized with model: gemini-1.5-flash-latest")
+    context_gen_model = genai.GenerativeModel('gemini-1.5-flash-latest')
+    print(f"Google Generative AI client initialized with model: gemini-1.5-flash-latest.")
 except Exception as e:
     print(f"Error initializing Google Generative AI client: {e}")
     sys.exit(1)
+
+# Initialize tiktoken encoder for checking context length for summary LLM
+try:
+    encoding = tiktoken.get_encoding("cl100k_base") # Common encoder
+except:
+    encoding = tiktoken.get_encoding("gpt2") # Fallback
+print("Tiktoken encoder initialized.")
+
+MAX_TOKENS_FOR_SUMMARY_CONTEXT = 200000  # Approx token limit for Gemini 1.5 Flash context window (actually 1M, but keep summary context smaller)
 
 # --- Helper Functions ---
 def generate_content_hash(content: str) -> str:
     return hashlib.md5(content.encode('utf-8')).hexdigest()
 
-def get_contextual_summary(full_document_text: str, chunk_text: str, doc_title: str) -> str:
+def get_contextual_summary_for_chunk(
+    full_document_text_for_context: str, 
+    chunk_text: str, 
+    doc_title: str, 
+    llm_model: genai.GenerativeModel
+) -> str | None:
+    
+    # Truncate full_document_text_for_context if it's too long to avoid excessive token usage for the summary model
+    # This is a practical limit for the helper text provided to the summary generator.
+    tokens = encoding.encode(full_document_text_for_context)
+    if len(tokens) > MAX_TOKENS_FOR_SUMMARY_CONTEXT:
+        print(f"    WARN: Full document context for '{doc_title}' summary generation is too long ({len(tokens)} tokens). Truncating to {MAX_TOKENS_FOR_SUMMARY_CONTEXT} tokens.")
+        full_document_text_for_context = encoding.decode(tokens[:MAX_TOKENS_FOR_SUMMARY_CONTEXT])
+
     prompt = f"""
-    You are an expert summarizer. Given the following full document titled '{doc_title}' and a specific chunk from it,
-    provide a concise contextual summary (around 50-100 words) for ONLY the provided CHUNK.
-    This summary should explain what the chunk is about and its role or significance within the larger document.
-    This summary will be prepended to the chunk to improve search retrieval for a RAG system.
-    Focus SOLELY on summarizing the CHUNK based on its relationship to the FULL DOCUMENT.
+    Document Title: "{doc_title}"
 
-    FULL DOCUMENT (or a significant surrounding window):
+    Full Document Context (or significant surrounding window):
     ---
-    {full_document_text[:800000]} 
+    {full_document_text_for_context}
     ---
-    (Note: Full document might be truncated if excessively long for this summary generation step)
 
-    SPECIFIC CHUNK TO SUMMARIZE:
+    Specific Chunk to Summarize:
     ---
     {chunk_text}
     ---
 
-    CONCISE CONTEXTUAL SUMMARY FOR THE CHUNK (50-100 words):
+    Task: Provide a concise contextual summary (target 50-100 words, strictly for the 'Specific Chunk to Summarize') that explains what this specific chunk is about AND its role or significance within the larger document context provided. This summary will be prepended to the chunk to improve search retrieval for a RAG system. Focus ONLY on the specific chunk's context.
+    CONCISE CONTEXTUAL SUMMARY:
     """
     try:
-        # print(f"DEBUG: Prompt sent to LLM for summary:\n{prompt[:500]}...\n") # Debug: careful with long prints
-        print(f"DEBUG: Generating summary for chunk (length {len(chunk_text)}) from document '{doc_title}'...")
-        response = context_gen_model.generate_content(prompt)
-        # print(f"DEBUG: LLM Response object: {response}") # Debug response object
-        summary = response.text.strip()
-        # print(f"DEBUG: Generated summary: {summary}")
+        print(f"    Generating summary for chunk (length {len(chunk_text)} chars)...")
+        # Safety settings can be adjusted if summaries are getting blocked
+        # safety_settings = [
+        #     {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+        #     {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+        #     {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+        #     {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+        # ]
+        # response = llm_model.generate_content(prompt, safety_settings=safety_settings)
+        response = llm_model.generate_content(prompt)
+        
+        if response.parts:
+            summary = "".join(part.text for part in response.parts).strip()
+        elif hasattr(response, 'text') and response.text:
+            summary = response.text.strip()
+        else: # Handle cases where response might be empty or blocked
+            print(f"    WARN: LLM returned no text for summary. Response: {response.prompt_feedback if hasattr(response, 'prompt_feedback') else 'Unknown reason'}")
+            return None # Or return an empty string or placeholder
+
+        if not summary: # Additional check if summary is empty string
+             print(f"    WARN: LLM generated an empty summary for chunk from '{doc_title}'.")
+             return None
+        print(f"    Summary generated (length {len(summary)} chars).")
         return summary
     except Exception as e:
-        print(f"ERROR generating contextual summary for chunk from '{doc_title}': {e}")
-        # print(f"DEBUG: Failed prompt was:\n{prompt[:500]}...\n") # Debug: careful with long prints
-        # print(f"DEBUG: Failed chunk was:\n{chunk_text[:500]}...\n")
-        return f"Error generating summary: {e}"
+        print(f"    ERROR generating contextual summary for chunk from '{doc_title}': {e}")
+        return None # Return None on error
 
+def store_chunks_in_supabase(supabase: Client, chunks_to_store: list):
+    if not chunks_to_store:
+        return 0
+    
+    print(f"  Attempting to insert {len(chunks_to_store)} chunks into Supabase...")
+    try:
+        # Upserting based on document_id and chunk_sequence to handle re-runs if needed,
+        # though full delete of old chunks is preferred for content changes.
+        # If a chunk with same doc_id and sequence exists, its text and summary are updated.
+        # This requires careful handling if you don't want to re-summarize unchanged chunks.
+        # For simplicity now, we'll do batch inserts.
+        # Ensure `document_chunks` table has `ON CONFLICT (document_id, chunk_sequence) DO UPDATE SET ...` if using upsert.
+        # For initial load, simple insert is fine if old chunks are deleted.
+        
+        response = supabase.table("document_chunks").insert(chunks_to_store).execute()
+        if response.data:
+            print(f"  Successfully inserted/updated {len(response.data)} chunks in Supabase.")
+            return len(response.data)
+        else:
+            print(f"  ERROR storing chunks in Supabase: {response.error}")
+            if response.error and 'violates unique constraint "document_chunks_document_id_chunk_sequence_key"' in str(response.error.message):
+                print("  Hint: This might be due to trying to re-insert existing chunks without proper upsert logic or prior deletion for updated documents.")
+            return 0
+    except Exception as e:
+        print(f"  EXCEPTION during Supabase chunk insertion: {e}")
+        return 0
 
-def process_and_store_document(
+def process_document(
     supabase: Client,
-    file_path_host_os: Path, # Path on Anthony's machine
-    source_uri: str, # Unique identifier for this document in the DB
+    llm_summary_model: genai.GenerativeModel,
+    file_path_on_host: Path,
+    source_uri: str,
     document_type: str,
     title: str,
-    chunking_strategy: str = "recursive_char" # "markdown_header" or "recursive_char"
+    chunking_config: dict,
+    generate_summaries: bool = True 
 ):
-    print(f"\n--- Processing document: {title} ({source_uri}) ---")
+    print(f"\n--- Processing Document: {title} ({source_uri}) ---")
+    print(f"--- Source File Path: {file_path_on_host} ---")
+
+    if not file_path_on_host.exists():
+        print(f"ERROR: Source file not found: {file_path_on_host}")
+        return 0
+
     try:
-        with open(file_path_host_os, "r", encoding="utf-8") as f:
+        with open(file_path_on_host, "r", encoding="utf-8") as f:
             content = f.read()
-        print(f"Read file: {file_path_host_os}, length: {len(content)} characters.")
-    except FileNotFoundError:
-        print(f"ERROR: File not found at {file_path_host_os}")
-        return
+        print(f"Read file, length: {len(content)} characters.")
     except Exception as e:
-        print(f"ERROR reading file {file_path_host_os}: {e}")
-        return
+        print(f"ERROR reading file {file_path_on_host}: {e}")
+        return 0
 
     content_hash = generate_content_hash(content)
+    print(f"Generated content hash: {content_hash}")
 
-    # Check if document with this hash already exists
-    existing_doc_resp = supabase.table("documents").select("id, content_hash").eq("source_uri", source_uri).maybe_single().execute()
+    # Check if document exists and if content is unchanged
+    db_document = supabase.table("documents").select("id, content_hash").eq("source_uri", source_uri).maybe_single().execute()
     
-    doc_id = None
-    if existing_doc_resp.data and existing_doc_resp.data.get("content_hash") == content_hash:
-        print(f"Document '{title}' with identical content already ingested. Skipping chunking and summary generation.")
-        doc_id = existing_doc_resp.data["id"]
-        # Optionally, re-verify chunks exist or re-process if needed, for now we skip.
-        # For a more robust system, one might still check if chunks exist for this doc_id.
-        # For the MVP, if hash matches, assume it's fully processed to save LLM calls.
-        print(f"Using existing document_id: {doc_id}")
-        return # Skip further processing for this document
-    elif existing_doc_resp.data: # Document exists but content changed, or no hash previously
-        print(f"Document '{title}' exists but content has changed or hash mismatch. Re-processing.")
-        doc_id = existing_doc_resp.data["id"]
-        # Delete old chunks and embeddings associated with this document_id before re-ingesting
-        print(f"Deleting old chunks for document_id: {doc_id}...")
-        supabase.table("document_chunks").delete().eq("document_id", doc_id).execute() 
-        # Embeddings will be deleted by cascade if foreign key is set up correctly.
-        # Update the document entry with new hash and updated_at time
-        doc_update_resp = supabase.table("documents").update({
-            "full_text_content": content, # Storing full text for CAG and re-chunking flexibility
-            "content_hash": content_hash,
-            "last_updated_at": "now()"
-        }).eq("id", doc_id).execute()
-        if doc_update_resp.data:
-            print(f"Updated existing document record for '{title}'.")
+    doc_id_for_chunks = None
+    
+    if db_document.data:
+        doc_id_for_chunks = db_document.data["id"]
+        if db_document.data.get("content_hash") == content_hash:
+            print(f"Document '{title}' (source_uri: {source_uri}) found with matching content hash. Verifying chunks...")
+            # Check if chunks already exist for this document_id to avoid re-processing
+            chunk_check = supabase.table("document_chunks").select("id", count="exact").eq("document_id", doc_id_for_chunks).limit(1).execute()
+            if chunk_check.count and chunk_check.count > 0:
+                print(f"  {chunk_check.count} chunks already exist for document_id {doc_id_for_chunks}. Skipping ingestion for this document.")
+                return chunk_check.count # Return number of existing chunks
+            else:
+                print(f"  No chunks found for existing document_id {doc_id_for_chunks} despite matching hash. Proceeding to chunk.")
         else:
-            print(f"Error updating document record for '{title}': {doc_update_resp.error}")
-            return # Stop if document update failed
-    else: # Document does not exist
-        print(f"Document '{title}' not found in database. Inserting new record.")
-        doc_data = {
+            print(f"Document '{title}' found, but content_hash differs or was missing. Updating document and re-processing chunks.")
+            supabase.table("document_chunks").delete().eq("document_id", doc_id_for_chunks).execute() # Delete old chunks
+            print(f"  Old chunks deleted for document_id: {doc_id_for_chunks}.")
+            supabase.table("documents").update({
+                "full_text_content": content,
+                "content_hash": content_hash,
+                "last_updated_at": "now()",
+                "title": title, # Ensure title is updated if it changed
+                "document_type": document_type # Ensure type is updated
+            }).eq("id", doc_id_for_chunks).execute()
+            print(f"  Document record updated for document_id: {doc_id_for_chunks}.")
+    else:
+        print(f"Document '{title}' not found. Inserting new document record.")
+        doc_data_to_insert = {
             "source_uri": source_uri,
             "document_type": document_type,
             "title": title,
-            "full_text_content": content, # Storing full text for CAG and re-chunking flexibility
-            "metadata": {"file_path_original": str(file_path_host_os)},
+            "full_text_content": content,
+            "metadata": {"original_file_path": str(file_path_on_host)},
             "content_hash": content_hash,
-            # access_tags to be populated later based on roles/permissions
         }
-        insert_doc_resp = supabase.table("documents").insert(doc_data).execute()
-        if insert_doc_resp.data and len(insert_doc_resp.data) > 0:
-            doc_id = insert_doc_resp.data["id"]
-            print(f"Inserted new document record for '{title}', document_id: {doc_id}")
+        response = supabase.table("documents").insert(doc_data_to_insert).execute()
+        if response.data and len(response.data) > 0:
+            doc_id_for_chunks = response.data["id"] # Supabase returns a list
+            print(f"  New document record inserted with id: {doc_id_for_chunks}")
         else:
-            print(f"ERROR inserting document '{title}': {insert_doc_resp.error}")
-            return
+            print(f"  ERROR inserting new document record: {response.error}")
+            return 0
 
-    if not doc_id:
-        print(f"ERROR: Could not obtain document_id for '{title}'. Skipping chunk processing.")
-        return
+    if not doc_id_for_chunks:
+        print(f"FATAL: Could not obtain document_id for {title}. Aborting processing for this document.")
+        return 0
 
     # Chunking
-    chunks_with_text = []
-    if chunking_strategy == "markdown_header":
-        headers_to_split_on = [
-            ("#", "H1"),
-            ("##", "H2"),
-            ("###", "H3"),
-        ]
-        markdown_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers_to_split_on, strip_headers=False)
-        docs_md = markdown_splitter.split_text(content)
-        chunks_with_text = [doc.page_content for doc in docs_md if doc.page_content.strip()]
-        print(f"Markdown chunking for '{title}' complete. {len(chunks_with_text)} chunks created.")
-    elif chunking_strategy == "recursive_char":
+    raw_chunks_text = []
+    strategy = chunking_config["strategy"]
+    
+    if strategy == "markdown_header":
+        print(f"Applying MarkdownHeaderTextSplitter for '{title}'...")
+        headers_to_split_on = chunking_config.get("headers_to_split_on", [("#", "H1"), ("##", "H2"), ("###", "H3"), ("####", "H4")])
+        strip_headers = chunking_config.get("strip_headers", False)
+        markdown_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers_to_split_on, strip_headers=strip_headers)
+        try:
+            # MarkdownHeaderTextSplitter returns Document objects
+            split_docs = markdown_splitter.split_text(content)
+            semantic_chunks_from_markdown = [doc.page_content for doc in split_docs if doc.page_content.strip()]
+            print(f"  Initial semantic markdown chunks: {len(semantic_chunks_from_markdown)}")
+
+            # Secondary split for oversized semantic chunks
+            final_markdown_chunks = []
+            max_sem_chunk_len = chunking_config.get("max_semantic_chunk_chars", 4000)
+            sub_chunk_size = chunking_config.get("recursive_sub_chunk_size", 2000)
+            sub_chunk_overlap = chunking_config.get("recursive_sub_chunk_overlap", 200)
+            
+            recursive_splitter_for_oversized = RecursiveCharacterTextSplitter(
+                chunk_size=sub_chunk_size,
+                chunk_overlap=sub_chunk_overlap
+            )
+            for sem_chunk in semantic_chunks_from_markdown:
+                if len(sem_chunk) > max_sem_chunk_len:
+                    print(f"    Semantic chunk (len {len(sem_chunk)}) too large, sub-dividing...")
+                    sub_chunks = recursive_splitter_for_oversized.split_text(sem_chunk)
+                    final_markdown_chunks.extend(sub_chunks)
+                    print(f"      Sub-divided into {len(sub_chunks)} smaller chunks.")
+                else:
+                    final_markdown_chunks.append(sem_chunk)
+            raw_chunks_text = final_markdown_chunks
+        except Exception as e_md_split:
+            print(f"  ERROR during Markdown splitting for '{title}': {e_md_split}. Falling back to recursive char split.")
+            # Fallback to recursive if markdown splitting fails catastrophically
+            strategy = "recursive_char_large" # Force recursive if MD fails
+            # Re-assign content in case it was modified or if needed for fallback
+            # This re-evaluation is to ensure that the content variable is correctly set for the fallback.
+            if strategy == "recursive_char_large": # Condition is now true
+                 pass # content is already set
+
+    # Ensure 'strategy' is re-evaluated if it was changed to fallback
+    if strategy == "recursive_char_large": # For chat logs or MD fallback
+        print(f"Applying RecursiveCharacterTextSplitter for '{title}'...")
+        chunk_size = chunking_config.get("chunk_size", 5000)
+        chunk_overlap = chunking_config.get("chunk_overlap", 300)
+        separators = chunking_config.get("separators", ["\n\n", "\n", " ", ""])
+        
         text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1200, # Adjusted for potentially better context per chunk
-            chunk_overlap=150,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            separators=separators,
             length_function=len,
             is_separator_regex=False,
         )
-        chunks_with_text = text_splitter.split_text(content)
-        print(f"Recursive character chunking for '{title}' complete. {len(chunks_with_text)} chunks created.")
-    else:
-        print(f"Unknown chunking strategy: {chunking_strategy}")
-        return
+        raw_chunks_text = text_splitter.split_text(content)
 
-    if not chunks_with_text:
+    if not raw_chunks_text:
         print(f"No chunks generated for '{title}'. Check content or chunking strategy.")
-        return
+        return 0
+    print(f"Total chunks generated for '{title}': {len(raw_chunks_text)}")
 
-    print(f"Generating contextual summaries for {len(chunks_with_text)} chunks of '{title}' (this may take a while)...")
-    
-    # For very large documents, consider passing only relevant surrounding text instead of full_document_text
-    # to manage context window for summary generation if the full document is >1M tokens.
-    # For now, we pass up to the first 800k characters as a practical limit for the summary helper.
-    context_for_summaries = content[:800000] 
-    if len(content) > 800000:
-        print(f"WARN: Full document content for '{title}' exceeds 800k chars, using truncated version for summary context.")
+    # Contextual Summary Generation & Storage
+    chunks_for_db_insert = []
+    total_processed_chunks_count = 0
 
-    chunk_data_to_insert = []
-    for i, chunk_text in enumerate(chunks_with_text):
-        print(f"  Processing chunk {i+1}/{len(chunks_with_text)} for '{title}'...")
-        if not chunk_text.strip():
-            print(f"    Skipping empty chunk {i+1}.")
+    # Use full content for summary context, but the helper function will truncate if needed.
+    # For very large files, this could be optimized to pass only a relevant window.
+    # For simplicity here, pass the first large chunk of content.
+    summary_context_text = content[:MAX_TOKENS_FOR_SUMMARY_CONTEXT * 2] # Heuristic for character count from token count
+
+    for i, chunk_text_content in enumerate(raw_chunks_text):
+        if not chunk_text_content.strip():
+            print(f"  Skipping empty chunk {i+1} for '{title}'.")
             continue
+
+        current_summary = None
+        if generate_summaries:
+            current_summary = get_contextual_summary_for_chunk(summary_context_text, chunk_text_content, title, llm_summary_model)
+            time.sleep(1) # Respect API rate limits for the summary generation model
         
-        contextual_summary = get_contextual_summary(context_for_summaries, chunk_text, title)
-        time.sleep(1) # Respect API rate limits for the summary generation model
-
-        chunk_data_to_insert.append({
-            "document_id": doc_id,
-            "chunk_text": chunk_text,
+        chunks_for_db_insert.append({
+            "document_id": doc_id_for_chunks,
+            "chunk_text": chunk_text_content,
             "chunk_sequence": i + 1,
-            "contextual_summary": contextual_summary,
-            "metadata": {"original_chunk_length": len(chunk_text)}
+            "contextual_summary": current_summary, # Will be None if generate_summaries is False or if error
+            "metadata": {"original_chunk_length": len(chunk_text_content)}
         })
-        print(f"    Summary for chunk {i+1} generated.")
 
-    if chunk_data_to_insert:
-        print(f"Storing {len(chunk_data_to_insert)} chunks with summaries for '{title}' in Supabase...")
-        try:
-            insert_chunks_resp = supabase.table("document_chunks").insert(chunk_data_to_insert).execute()
-            if insert_chunks_resp.data:
-                print(f"Successfully stored {len(insert_chunks_resp.data)} chunks for '{title}'.")
-            else:
-                print(f"ERROR storing chunks for '{title}': {insert_chunks_resp.error}")
-        except Exception as e_insert:
-            print(f"EXCEPTION while inserting chunks for '{title}': {e_insert}")
-    else:
-        print(f"No valid chunks with summaries to store for '{title}'.")
+        # Batch insert to Supabase to avoid too many individual calls / large single payload
+        if len(chunks_for_db_insert) >= 50:
+            total_processed_chunks_count += store_chunks_in_supabase(supabase_client, chunks_for_db_insert)
+            chunks_for_db_insert = [] # Reset batch
 
-    print(f"--- Finished processing document: {title} ---")
+    # Insert any remaining chunks
+    if chunks_for_db_insert:
+        total_processed_chunks_count += store_chunks_in_supabase(supabase_client, chunks_for_db_insert)
+
+    print(f"--- Finished processing and storing for document: {title}. Total chunks stored: {total_processed_chunks_count} ---")
+    return total_processed_chunks_count
 
 # --- Main Execution ---
 def main():
-    print("Starting Day 2: Document Ingestion & Contextualization Script...")
+    print("Starting Day 2: Document Ingestion & Strategic Contextualization Script...")
+    start_time = time.time()
 
-    # Define documents to process
-    # Using Path objects for OS-independent path handling
-    # These paths are on the HOST OS where the script is run (Anthony's machine)
     documents_to_process = [
         {
-            "file_path_host_os": DOCS_DIR_HOST_OS / "Business_Plan_Dozer_V8.md",
-            "source_uri": "dozers_blueprint_v8", # Unique DB identifier
+            "file_path_on_host": PLANNING_DOCS_DIR_HOST_OS / "Business_Plan_Dozer_V8.md",
+            "source_uri": "dozers_blueprint_v8",
             "document_type": "BUSINESS_PLAN",
             "title": "Dozer's Blueprint V8.0",
-            "chunking_strategy": "markdown_header"
+            "chunking_config": {
+                "strategy": "markdown_header",
+                "headers_to_split_on": [("#", "H1"), ("##", "H2"), ("###", "H3"), ("####", "H4")],
+                "strip_headers": False,
+                "max_semantic_chunk_chars": 6000, # Chars, not tokens. Adjust as needed.
+                "recursive_sub_chunk_size": 3000,
+                "recursive_sub_chunk_overlap": 300
+            },
+            "generate_summaries": True # Generate summaries for the important Blueprint
         },
         {
-            "file_path_host_os": DOCS_DIR_HOST_OS / "DozerAI_Dev_Chat_History.txt",
-            "source_uri": "dozerai_dev_chat_history_main", # Unique DB identifier
-            "document_type": "CHAT_HISTORY",
-            "title": "DozerAI Development Chat History (Main)",
-            "chunking_strategy": "recursive_char"
+            "file_path_on_host": PLANNING_DOCS_DIR_HOST_OS / "DozerAI_Dev_Chat_HistoryV1.txt",
+            "source_uri": "dozerai_dev_chat_history_v1",
+            "document_type": "CHAT_HISTORY_DOZERAI_DEV",
+            "title": "DozerAI Development Chat History V1",
+            "chunking_config": {
+                "strategy": "recursive_char_large",
+                "chunk_size": 6000, # Larger chunks for chat
+                "chunk_overlap": 400,
+                "separators": ["\n\n\n", "\n\n", "\n", ". ", "? ", "! ", " ", ""] # Prioritize larger breaks
+            },
+            "generate_summaries": False # Skip LLM summaries for chat logs for now
+        },
+        {
+            "file_path_on_host": PLANNING_DOCS_DIR_HOST_OS / "Business_Plan_Chat_HistoryV1.txt",
+            "source_uri": "business_plan_chat_history_v1",
+            "document_type": "CHAT_HISTORY_BUSINESS_PLAN",
+            "title": "Business Plan Development Chat History V1",
+            "chunking_config": {
+                "strategy": "recursive_char_large",
+                "chunk_size": 6000,
+                "chunk_overlap": 400,
+                "separators": ["\n\n\n", "\n\n", "\n", ". ", "? ", "! ", " ", ""]
+            },
+            "generate_summaries": False # Skip LLM summaries for chat logs
         }
     ]
 
+    total_chunks_ingested_all_docs = 0
     for doc_info in documents_to_process:
-        process_and_store_document(
+        total_chunks_ingested_all_docs += process_document(
             supabase_client,
-            doc_info["file_path_host_os"],
+            context_gen_model,
+            doc_info["file_path_on_host"],
             doc_info["source_uri"],
             doc_info["document_type"],
             doc_info["title"],
-            doc_info["chunking_strategy"]
+            doc_info["chunking_config"],
+            doc_info["generate_summaries"]
         )
-
-    print("\nScript finished. Check Supabase 'documents' and 'document_chunks' tables.")
+    
+    end_time = time.time()
+    print(f"\nScript finished in {end_time - start_time:.2f} seconds.")
+    print(f"Total chunks ingested across all documents: {total_chunks_ingested_all_docs}")
+    print("Check Supabase 'documents' and 'document_chunks' tables.")
 
 if __name__ == "__main__":
     main()
@@ -1312,76 +1480,115 @@ Python
 Tasks for Anthony Pierce (CEO):
 Update requirements.txt:
 Open C:\Dozers\DozerAI_Code\requirements.txt.
-APPEND the new libraries provided by DozerAI_Builder (for google-generativeai, markdown-it-py, langchain-text-splitters, tiktoken) to the existing content. Save the file.
-Install New Dependencies:
+Ensure the following lines (and any others previously added) are present. Add them if missing. Ensure versions are compatible (these are recent stable versions as of my last update).
+# C:\Dozers\DozerAI_Code\requirements.txt
+python-dotenv~=1.0.1
+supabase~=2.4.2
+fastapi~=0.111.0
+uvicorn[standard]~=0.29.0
+pydantic~=2.7.1
+langfuse~=2.25.2
+psycopg[binary]~=3.1.18
+google-generativeai~=0.5.4 
+markdown-it-py~=3.0.0
+langchain-text-splitters~=0.2.1 
+langchain-core~=0.2.5 
+tiktoken~=0.7.0
+Use code with caution.
+Text
+Save the file.
+Install/Update Dependencies:
 Open your terminal (PowerShell or Git Bash).
-Navigate to the application code root: cd C:\Dozers\DozerAI_Code\
-Activate your Python virtual environment:
-PowerShell: .\venv\Scripts\Activate.ps1
-Git Bash / Cmd: source venv/Scripts/activate
-Run: pip install -r requirements.txt
-Confirm successful installation of the new packages.
-Save the Ingestion Script:
-Create the file C:\Dozers\DozerAI_Code\scripts\01_ingest_and_contextualize_docs.py.
-Copy the complete Python script code provided above by DozerAI_Builder into this file. Save it.
-Verify .env File:
-Double-check C:\Dozers\DozerAI_Code\config\.env to ensure SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, and GOOGLE_API_KEY are correctly populated with your actual keys. The script needs the Google API key for generating contextual summaries.
-Run the Ingestion Script:
+Navigate to cd C:\Dozers\DozerAI_Code\
+Activate your Python virtual environment: .\venv\Scripts\Activate.ps1 (PowerShell) or source venv/Scripts/activate (Git Bash)
+Run: pip install -r requirements.txt --upgrade (the --upgrade flag helps ensure you get specified or newer compatible versions).
+Confirm successful installation/update of packages.
+Save the Revised Ingestion Script:
+Open C:\Dozers\DozerAI_Code\scripts\01_ingest_and_contextualize_docs.py (the one we might have created or you worked on yesterday).
+Replace its entire content with the complete Python script code provided directly above by DozerAI_Builder. Save it.
+Verify .env File and Document Paths:
+CRITICAL: Double-check C:\Dozers\DozerAI_Code\config\.env to ensure SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, and GOOGLE_API_KEY are correctly populated.
+CRITICAL: Confirm your source documents are correctly named and located:
+C:\Dozers\Docs\Planning Docs\Business_Plan_Dozer_V8.md
+C:\Dozers\Docs\Planning Docs\DozerAI_Dev_Chat_HistoryV1.txt
+C:\Dozers\Docs\Planning Docs\Business_Plan_Chat_HistoryV1.txt
+Add Docs/Planning Docs/ and logs/ to C:\Dozers\.gitignore:
+Open C:\Dozers\.gitignore.
+Add these lines if they are not already present from a previous version of the gitignore I provided (ensure they are not commented out):
+# Project Root Specific Ignores
+logs/
+Docs/Planning Docs/
+Use code with caution.
+Gitignore
+Save the .gitignore file.
+Run the Revised Ingestion Script:
 In your activated virtual environment, from C:\Dozers\DozerAI_Code\, run:
 python scripts/01_ingest_and_contextualize_docs.py
 Use code with caution.
 Bash
-Observe the output carefully. The script will print progress messages. It might take some time, especially for the contextual summary generation (due to LLM calls and rate limiting time.sleep(1)).
-Note any errors.
+Observe the output carefully. The script will print progress for each document, chunking, and (for the Blueprint) summary generation. It includes a hash check to avoid full re-processing of unchanged documents if chunks already exist for that document's current hash. For changed documents, it will delete old chunks before processing.
+Note any errors. The Business Plan (being smaller and chunked more semantically) should process relatively quickly. The chat logs (even without individual summaries) will take longer due to their size and number of chunks, but significantly less time than before.
 Verify Data in Supabase:
 After the script completes, go to your Supabase project dashboard.
-Check the documents table: You should see two rows, one for "Dozer's Blueprint V8.0" and one for "DozerAI Development Chat History (Main)". Verify source_uri, document_type, title, and content_hash.
-Check the document_chunks table: You should see multiple rows. Check a few to see if chunk_text looks reasonable and if contextual_summary contains a plausible summary.
+Check the documents table: You should see three rows, one for each source document. Verify source_uri, document_type, title, and especially content_hash.
+Check the document_chunks table:
+Filter by document_id for the Business Plan: You should see multiple chunks (hopefully more than 1 now!). Check a few chunk_text and ensure the contextual_summary field has meaningful text.
+Filter by document_id for one of the chat histories: You should see many chunks. The contextual_summary field for these should be NULL or empty.
 Report to DozerAI_Builder:
-"Day 2 Anthony tasks complete. Ingestion script ran. Status: [Success/Errors Encountered]. Verified data in Supabase documents and document_chunks tables. [Number] blueprint chunks and [Number] chat history chunks created."
-Provide any error messages if the script failed or if data in Supabase looks incorrect.
-Explanation of Day 2 Tasks:
-This day is all about transforming our raw source documents (Business Plan and Chat History) into a structured, AI-ready format within "The Kennel."
-Anthony's Tasks: Update Python packages, save the ingestion script provided by DozerAI_Builder, ensure the .env file is correct (especially the Google API key), run the script, and then verify the results in Supabase.
-DozerAI_Builder's Tasks: Provide the updated requirements.txt and the complete Python script for ingestion. The script handles reading files, applying different chunking strategies (header-aware for Markdown, recursive for plain text), calling a Google LLM to generate a contextual summary for each chunk (the core of Anthropic's Contextual Retrieval), and then storing all this processed data into the documents and document_chunks tables in Supabase. It also includes a basic check to avoid re-processing identical documents based on a content hash.
+"Day 2 Anthony tasks complete with revised script. Ingestion script ran. Status: [Success/Errors Encountered].
+Business Plan: [Number] chunks created. Contextual summaries look [Good/Okay/Problematic].
+DozerAI Chat History: [Number] chunks created. Contextual summaries are correctly NULL/empty.
+Business Plan Chat History: [Number] chunks created. Contextual summaries are correctly NULL/empty.
+Verified data in Supabase documents and document_chunks tables."
+Provide any error messages or unexpected behavior.
+Explanation of Revised Day 2 Tasks:
+This revised Day 2 directly addresses the previous issues:
+Intelligent Chunking: The Business Plan (Markdown) now uses header-aware splitting with a fallback for oversized semantic sections. Chat logs use a larger, more appropriate recursive character split.
+Strategic Contextual Summaries: Full Contextual Retrieval (LLM summary per chunk) is applied to the Business Plan chunks. For chat history chunks, this expensive step is skipped for the initial load, dramatically speeding up ingestion and reducing cost.
+Idempotency Improved: The script now checks source_uri and content_hash in the documents table. If a document exists with a matching hash and already has chunks, it skips reprocessing that document. If the hash differs (or no hash existed), it updates the document record and deletes old chunks before re-processing, ensuring "The Kennel" stays current with the latest version of your source files when the script is re-run.
+Clearer Logging: The script provides more feedback during its run.
 Troubleshooting:
 Python Script Errors:
-ModuleNotFoundError: Ensure pip install -r requirements.txt in active venv was successful for all new packages.
-API Key Errors (Google or Supabase): Verify .env file contents and paths. Ensure the Google API key allows for the Gemini model being called.
-File Not Found: Ensure Business_Plan_Dozer_V8.md and DozerAI_Dev_Chat_History.txt are exactly at C:\Dozers\Docs\.
-LLM Rate Limits for Summaries: The time.sleep(1) is a basic attempt to mitigate. If errors persist, we might need longer delays or batching for the summary generation.
-Data Not Appearing in Supabase: Check script output for insertion errors. Verify Supabase credentials in .env. Check RLS policies on the tables (though for service_role key, RLS is usually bypassed by default for insertions, we ensured our policies from Day 1 are permissive for public schema where these tables live).
+Module/API Key errors: Double-check requirements.txt installation in active venv and .env file accuracy.
+File Not Found: Verify exact paths in PLANNING_DOCS_DIR_HOST_OS and filenames in the documents_to_process list in the script.
+LLM Call Errors (for Blueprint summaries): Check Google API key, model availability (gemini-1.5-flash-latest). The prompt is long due to full doc context; if errors persist, we might need to pass a smaller window of the Blueprint for summary context.
+Supabase Insert Errors: Check console for specific error. The schema from Day 1 (with chunk_sequence now correctly in place) should support these insertions. Batch insertion can sometimes hit Supabase's payload limits if individual chunks are massive and batches are too large; script currently batches 50 chunks.
+Incorrect Number of Chunks for Blueprint: If still 1 chunk, the header levels in your Business_Plan_Dozer_V8.md might not match #, ##, ###, ####, or the content is one giant block under a single high-level header. We may need to inspect the Blueprint's Markdown structure and adjust headers_to_split_on or the max_semantic_chunk_chars threshold in the script.
 Advice for Implementation:
-Anthony: The script may take a while to run due to the LLM calls for each chunk's summary. Let it run to completion. Monitor the console output for progress and any errors.
-DozerAI_Builder: The contextual summary prompt is crucial. The quality of these summaries directly impacts RAG performance. The chunking strategies are also key. The script handles basic duplicate prevention via content hashing.
+Anthony: The most critical parts are updating requirements.txt, correctly saving the new Python script, ensuring your .env has the GOOGLE_API_KEY and correct Supabase details, and that your source documents are in C:\Dozers\Docs\Planning Docs\. Let the script run fully; it will be much faster for chat logs now.
+DozerAI_Builder: The Markdown chunking strategy might need tuning based on the actual structure of Anthony's Business_Plan_Dozer_V8.md. The fallback recursive split for oversized semantic chunks is a good safeguard.
 Advice for CursorAI (DozerAI_Builder):
-Be mindful of the LLM context window when passing full_document_text to get_contextual_summary. The current script truncates it at 800k characters for the summary helper, which should be fine for Gemini 1.5 Flash's context capabilities for this specific task, but for extremely large single documents, a more sophisticated sliding window approach for context might be needed for the summary helper LLM. For Day 2, this approach is a good start.
+Continuously monitor the token limits and context window considerations for the get_contextual_summary_for_chunk function. For extremely large documents (megabytes of text), even sending a large truncated window for context might be problematic or slow for every chunk's summary. The current approach is a good balance for typical document sizes.
 Test:
-Anthony: Primary test is visual inspection of the documents and document_chunks tables in Supabase Studio. Are there rows for both source documents? Do the chunks look sensible? Do the contextual_summary fields contain text?
-DozerAI_Builder: Await Anthony's verification. Success means "The Kennel" is now populated with processable, context-enriched data.
+Anthony: After script completion, thoroughly inspect the documents and document_chunks tables in Supabase Studio.
+- Are there 3 records in documents?
+- Does the Blueprint have a reasonable number of chunks (more than 1)?
+- Do Blueprint chunks have text in contextual_summary?
+- Do chat history chunks have NULL or empty contextual_summary?
+- Does chunk_text look correct for a sample of chunks from each document?
+DozerAI_Builder: Await Anthony's verification. Success means "The Kennel" has its initial core textual knowledge, intelligently chunked and strategically enhanced with contextual summaries where most valuable.
 Backup Plans:
-If the script fails catastrophically, identify the failing part (file reading, chunking, summary gen, DB insert). We can debug the script. If only some chunks were inserted, the script's hash check (for full documents) might allow it to resume or re-process changed/missing parts, though the current script is more of a full re-process if the hash changes.
+If the script errors on a specific document, we can modify it to process documents individually for easier debugging. If Supabase inserts fail in batches, we can reduce batch size.
 Challenges:
-LLM API call costs/time for generating many contextual summaries. Robustness of Markdown header chunking for diverse Markdown structures. Ensuring Supabase insert operations are efficient for many chunks.
+Ensuring the Markdown chunking for the Business Plan yields an optimal number and size of chunks. Handling potential LLM flakiness or rate limits during summary generation (even with time.sleep(1)). Processing very large chat files efficiently even without summaries.
 Out of the Box Ideas:
-Batch insert chunks into Supabase for better performance (e.g., insert 50-100 chunks at a time).
-Implement a more sophisticated check for existing chunks to allow resuming a failed ingestion process more gracefully.
-Add more metadata during chunking (e.g., specific header text associated with a Markdown chunk).
+For future ingestion runs, implement a file watcher on the C:\Dozers\Docs\Planning Docs\ directory to automatically trigger re-ingestion of only modified files.
+Add more sophisticated metadata extraction during chunking (e.g., identifying speakers in chat logs, extracting section titles explicitly for all chunks).
 Logs:
 (DozerAI_Builder will log this after Anthony confirms successful completion of all his tasks for Day 2)
-“Action: Starting Task for DozerAI/App: Day 2 - Kennel Ingestion MVP: Blueprint & Chat History with Contextual Retrieval (Stage 1), Rules reviewed: Yes, Guides (Creation/Dev) consulted: Yes, Env verified: Yes, Sequence verified: Yes, Timestamp: [YYYY-MM-DD HH:MM:SS]”
+“Action: Starting Task for DozerAI/App: Day 2 - Kennel Ingestion (Stage 1): Intelligent Chunking & Strategic Contextual Summaries, Rules reviewed: Yes, Guides (Creation/Dev) consulted: Yes, Env verified: Yes, Sequence verified: Yes, Timestamp: [YYYY-MM-DD HH:MM:SS]”
 (Followed by)
-“Milestone Completed (DozerAI/App): Day 2 - Kennel Ingestion MVP: Blueprint & Chat History with Contextual Retrieval (Stage 1). Next Task: Day 3 - Kennel Ingestion MVP: Embedding Enriched Chunks. Feeling: [Anthony's vibe]. Date: [YYYY-MM-DD]”
+“Milestone Completed (DozerAI/App): Day 2 - Kennel Ingestion (Stage 1): Intelligent Chunking & Strategic Contextual Summaries. Next Task: Day 3 - Kennel Ingestion (Stage 2): Embedding Enriched Chunks & Creating HNSW Index. Feeling: [Anthony's vibe]. Date: [YYYY-MM-DD]”
 Commits:
-(To be done by Anthony after successfully running the Python script, verifying data in Supabase, and all files (requirements.txt, 01_ingest_and_contextualize_docs.py) are saved in their correct locations)
+(To be done by Anthony after successfully running the Python script, verifying data in Supabase, and all files are saved)
 # In C:\Dozers\
 git add .
-git commit -m "Day 2: Implement Stage 1 ingestion pipeline (parsing, chunking, contextual summaries) for Blueprint & Chat History. Update requirements."
+git commit -m "Day 2: Implement Stage 1 ingestion (intelligent chunking, strategic contextual summaries) for Blueprint & Chat History. Update requirements."
 git push origin main
 Use code with caution.
 Bash
 Motivation:
-"Dozer, old pal, today we're not just feeding you data, we're giving you understanding. Every piece of that Blueprint, every idea from our chats, is going to get its own little 'CliffsNotes' summary written by one of your AI cousins. This means when you need info, you won't just find a sentence, you'll know why that sentence matters. This is next-level brain food! It's gonna take a bit, but a smart doggo like you is worth the effort. Get ready to become an expert on... well, you and your amazing Bar'k & Grrr'ill!"
+"Dozer, my friend, today we're performing some serious brain surgery – in a good way! We're taking those giant scrolls of knowledge (the Blueprint and our chats) and slicing them up with surgical precision. The Blueprint gets the VIP treatment, with little AI-written notes attached to each section explaining its importance. The chat logs? We'll chop 'em into sensible conversation pieces. This isn't just data entry; it's crafting the very neurons of your understanding. Get ready to absorb, because tomorrow we turn these words into pure AI fuel!"
 
 
 End Day 2

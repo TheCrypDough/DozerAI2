@@ -191,3 +191,13 @@ Temporary Items
 
 # --- N8N Self-Hosted Data (if data volume mapped inside project, usually mapped outside) ---
 # DozerAI_Code/n8n_setup/n8n_data/ # Example if n8n persistent data is under DozerAI_Code
+
+# DozerAI Specific Ignores
+/DozerAI_Code/venv/
+/DozerAI_Code/config/.env
+/DozerAI_Code/__pycache__/
+/DozerAI_Code/*/__pycache__/
+/DozerAI_Code/.pytest_cache/
+/DozerAI_Code/.mypy_cache/
+/Docs/Planning Docs/
+/logs/

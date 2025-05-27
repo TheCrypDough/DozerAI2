@@ -47,18 +47,23 @@
 ## Day 2: Kennel Ingestion MVP: "Dozer's Blueprint V8.0" & Our Sacred Scrolls (Dev Chat History) with Contextual Retrieval Pipeline (Stage 1: Parsing, Chunking, Context Gen)
 *   **Tasks for DozerAI_Builder:**
     *   Update `requirements.txt` Content
-        *   Status: [ ] TODO
+        *   Status: [x] DONE
     *   Develop Python Script (`01_ingest_and_contextualize_docs.py`)
-        *   Status: [ ] TODO
+        *   Status: [x] DONE
     *   Log Start in `rules_check.log`
-        *   Status: [ ] TODO
+        *   Status: [x] DONE
     *   Instruct Anthony for His Tasks
-        *   Status: [ ] TODO
+        *   Status: [x] DONE
     *   Execute Auto-Update Triggers & Workflow (as per `DozerAI_Rules_V1.md`).
-        *   Status: [ ] TODO
-*   **Overall Day Status:** [ ] TODO
+        *   Status: [x] DONE (This current operation)
+*   **Overall Day Status:** [x] DONE
 *   **Summary of Day's Goal:** Ingest "Dozer's Blueprint V8.0" and `DozerAI_Dev_Chat_History.txt` by parsing, chunking, generating contextual summaries for each chunk, and storing them in Supabase.
-*   **Issues Encountered:** None (yet)
+*   **Issues Encountered:** Multiple script errors including Supabase connection/schema mismatches (PK `document_id`, missing `full_text_content`, `chunk_sequence`, `chunk_order`), incorrect Gemini model string, `langfuse` pip install version, `.env` variable name mismatch (`SUPABASE_API_URL`), Gemini API `FinishReason` parsing, and Gemini `MAX_TOKENS` too low for summaries. All resolved. `venv` also mysteriously disappeared and was recreated. `document_title` column added to `document_chunks` table and backfilled.
+
+---
+## Next Task
+*   Awaiting Day 3 Tasks from Anthony
+    *   Status: [ ] TODO
 
 ---
 *(New Day entries will be added here by DozerAI_Builder as per Auto-Update Workflow Step 10 in DozerAI_Rules_V1.md, sourcing tasks from the DozerAI_Development_Guide_V1.md)*

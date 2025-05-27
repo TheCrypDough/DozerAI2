@@ -46,3 +46,31 @@ Initial frustration with script errors and repeated attempts to get the schema i
 *   **Next Task Context:** Proceeding to Day 2, Task: Kennel Ingestion MVP: "Dozer's Blueprint V8.0" & Our Sacred Scrolls (Dev Chat History) with Contextual Retrieval Pipeline (Stage 1: Parsing, Chunking, Context Gen). This task involves creating `01_ingest_and_contextualize_docs.py` to read, chunk, generate contextual summaries for, and store the initial key documents in the newly created Supabase tables.
 
 ---
+**Task Completed: Day 2 - Kennel Ingestion MVP: "Dozer's Blueprint V8.0" & Our Sacred Scrolls (Dev Chat History) with Contextual Retrieval Pipeline (Stage 1: Parsing, Chunking, Context Gen)**
+*   **Date Completed:** 2025-05-27
+*   **Summary of Technical Work:** Successfully developed and executed the Python script `01_ingest_and_contextualize_docs.py`. This involved:
+    *   Updating `requirements.txt` with necessary packages (`google-generativeai`, `markdown-it-py`, `langchain-text-splitters`, `tiktoken`, specific versions for `supabase`, `langfuse`).
+    *   Setting up Supabase and Google Generative AI clients, handling API keys via `.env`.
+    *   Implementing robust document processing: reading files, generating content hashes for idempotency.
+    *   Logic to check for existing documents and chunks in Supabase, deleting old chunks if document content changed.
+    *   Intelligent chunking: MarkdownHeaderTextSplitter for "Dozer's Blueprint V8.0" (with recursive fallback for large sections) and RecursiveCharacterTextSplitter for chat histories.
+    *   Strategic contextual summary generation for Blueprint chunks using `gemini-2.5-flash-preview-05-20`, with detailed error handling and response parsing (including safety ratings and finish reasons). Chat histories skipped summarization.
+    *   Batch insertion of document metadata and chunks (including `document_title`) into Supabase tables (`documents`, `document_chunks`).
+    *   Extensive debugging of Supabase connection issues, schema mismatches (PK `document_id`, missing columns like `full_text_content`, `chunk_sequence`, `chunk_order`), Gemini API model string errors, `langfuse` pip version conflicts, `.env` variable name mismatches, Gemini API response parsing (FinishReason, safety ratings), and overly restrictive `max_output_tokens` for summaries.
+    *   Recreated Python virtual environment (`venv`) after it unexpectedly disappeared.
+*   **Key Decisions Made:**
+    *   Used `gemini-2.5-flash-preview-05-20` for contextual summaries of Blueprint chunks to balance cost and quality.
+    *   Skipped LLM summaries for chat history chunks to save cost/time for this MVP stage.
+    *   Implemented full deletion and re-insertion of chunks if a document's content hash changes.
+    *   Increased `max_output_tokens` for summaries to 1500 to prevent premature truncation.
+    *   Added a `document_title` column to the `document_chunks` table for easier human-readable reference and backfilled existing chunks.
+    *   Resolved `.env` variable discrepancy (`SUPABASE_API_URL` vs `SUPABASE_URL`) by adapting the script.
+*   **Anthony's Feedback/Vibe:** Positive upon successful script completion and data verification in Supabase. Approved the `document_title` addition.
+*   **Blocking Issues Encountered/Resolved:** 
+    *   Numerous script errors related to Supabase schema, API interactions, and configuration were systematically debugged and resolved.
+    *   The `venv` disappearing was a significant unexpected issue, resolved by recreation and reinstallation of dependencies.
+    *   The `chunk_order` column confusion was resolved by deleting it from Supabase.
+    *   Gemini API response handling (especially `FinishReason` and empty/blocked responses) required careful adjustments to the script.
+*   **Total Chunks Ingested:** 1050 (97 for Blueprint, 549 for Dev Chat, 404 for Biz Plan Chat).
+
+---

@@ -1,45 +1,34 @@
-# Core Python and Database
-python-dotenv
-psycopg[binary] # For PostgreSQL connection (includes psycopg2-binary or psycopg3 based on availability)
+# C:\Dozers\DozerAI_Code\requirements.txt
 
-# Supabase client (useful for other interactions, though not directly by the schema script)
-supabase
+# For loading .env files
+python-dotenv~=1.0.1
 
-# Langfuse Observability
-langfuse
+# Core Supabase client for Python
+supabase~=2.4.2
 
-# Google Generative AI
-google-generativeai
+# For FastAPI backend (future days)
+fastapi~=0.111.0
+uvicorn[standard]~=0.29.0
 
-# Pydantic (for data validation and settings management, useful soon)
-pydantic
-pydantic-settings
+# For Pydantic (data validation, used by FastAPI and agents)
+pydantic~=2.7.1
 
-# FastAPI and Uvicorn (for backend API, planned for later days)
-# fastapi
-# uvicorn[standard]
+# For Langfuse observability (future days)
+langfuse~=2.25.0
 
-# Langchain Core Components (will be expanded significantly)
-# langchain-core
-# langchain-community
-# langchain-google-genai
-# langchain-anthropic # If used
-# langchain-openai # If used
+# For direct PostgreSQL interaction (used by Day 1 script)
+psycopg[binary]~=3.1.18 # For psycopg3
 
-# LangGraph
-# langgraph
+# --- Added for Day 2 ---
+# For Google Generative AI (Gemini models)
+google-generativeai~=0.5.4 # Check for latest stable
 
-# crewAI
-# crewai
-# crewai_tools
+# For Markdown parsing and text splitting
+# markdown-it-py for robust Markdown parsing, can be used by custom splitters if needed
+# langchain-text-splitters for pre-built advanced splitters
+markdown-it-py~=3.0.0
+langchain-text-splitters~=0.2.1 # Or latest compatible
+langchain-core~=0.2.5 # Often a peer dependency for langchain_text_splitters
 
-# Mem0 - Agent Memory
-# mem0ai
-
-# Graph Database (Placeholder, Neo4j driver if used)
-# neo4j
-
-# Utility
-# requests
-# beautifulsoup4 # For potential web scraping tools
-# PyJWT # For handling JWTs if needed outside Supabase client 
+# For token counting (often an OpenAI SDK dependency, but good standalone for estimations)
+tiktoken~=0.7.0 
